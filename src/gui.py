@@ -8,13 +8,11 @@
 #*************************************Imports******************************************************************************
 
 import tkinter as tk
+import matplotlib.pyplot as plt
 
-
-
-
-
-
-
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
+import numpy as np
 
 #*****************************************Set up the Main Window of the Appliction*****************************************
 
@@ -64,13 +62,25 @@ startButton=tk.StringVar(mainWindow, value="Start Acquisition")
 
 #Variables to get data about dimension of the Grid
 
-xMin=tk.DoubleVar(mainWindow, value=0.0)
-xMax=tk.DoubleVar(mainWindow, value=0.0)
+xMin=tk.IntVar(mainWindow, value=-5)
+xMax=tk.IntVar(mainWindow, value=5)
 
-yMin=tk.DoubleVar(mainWindow, value=0.0)
-yMax=tk.DoubleVar(mainWindow, value=0.0)
+yMin=tk.IntVar(mainWindow, value=-5)
+yMax=tk.IntVar(mainWindow, value=5)
 
-#**********************************Panel that house all User Widgets***************************************
+#Define Variable that Display Results of the Experiment
+snr=tk.StringVar(value="Signal-to-Noise Ration:<Some Value>")
+location=tk.StringVar(value="Estimaned Location:(x,y)")
+time=tk.StringVar(value="Computational Time:<time> seconds")
+
+#************************************Function Invoked when button are pressed**********************************
+
+
+def quit():
+    """Terminates the program when run"""
+    mainWindow.destroy()
+
+#**********************************Panel that houses all User Widgets***************************************
 
 control=tk.Frame(mainWindow,width="1500",height="300",bg="black",bd=10)
 
@@ -78,12 +88,12 @@ control=tk.Frame(mainWindow,width="1500",height="300",bg="black",bd=10)
 
 #******************************Defining control panel that takes inputs of the user regarding signal properties******************
 
-signalPanel=tk.Frame(control,bd=7,bg="black") #panel to add all other widgets
+signalPanel=tk.Frame(control,bd=7,height="300") #panel to add all other widgets
 
 panelLabel=tk.Label(signalPanel,text="____________________Signal Properties_____________")# define a heading of this panel
 panelLabel.pack(side=tk.TOP)
 
-placeHolder=tk.Frame(signalPanel,width="300",height="200",bd=6);
+placeHolder=tk.Frame(signalPanel,width="300",height="106",bd=6);
 
 frequency=tk.Label(placeHolder,text="Sampling Frequency:")
 frequency.place(x=5,y=10)
@@ -106,12 +116,32 @@ gcc_scot.place(x=100,y=70)
 
 gcc_ml=tk.Radiobutton(placeHolder, text="GCC-ML", bd=5,variable=gccAlgo,activeforeground="blue", value="gcc-ml")
 gcc_ml.place(x=200,y=70)
+#*****************************Define Panel that will display results of the system***********************************************
+results=tk.Frame(control, width="100", height="100")
+center=tk.Frame(results,width="100", height="100")
 
+#Label that displays SNR of the system
+snrLabel=tk.Label(center,textvariable=snr)
+snrLabel.grid(row=0,column=0)
+
+#Label that displays target location
+tk.Label(results,text="_______________Results___________________").pack(side=tk.TOP)
+
+tk.Frame(results,width=129).pack(side=tk.RIGHT)
+tk.Frame(results,height=57).pack(side=tk.BOTTOM)
+locLabel=tk.Label(center,textvariable=location)
+locLabel.grid(row=1,column=0) 
+#Label that displays computational time in seconds
+timeLabel=tk.Label(center,textvariable=time)
+timeLabel.grid(row=2,column=0)
+
+center.pack(anchor=tk.CENTER)
+tk.Frame(signalPanel,width=70).pack(side=tk.RIGHT)
 placeHolder.pack(anchor=tk.CENTER)
 
-#****************************Define Panel for Interfacing with the user about Sensor Information*********************
+#********************************Define Panel for Interfacing with the user about Sensor Information*****************************
 
-sensorFrame=tk.Frame(control, width="500", height="100",bd=7,bg="black")
+sensorFrame=tk.Frame(control, width="500", height="100",bd=7)
 sensorLabel=tk.Label(sensorFrame,text="___________________________Sensor Data_____________________________")
 sensorLabel.pack()
 
@@ -172,6 +202,8 @@ sensor4yVal.grid(row=7,column=4)
 
 #message to promt the user to select sensor being considered as reference
 
+tk.Frame(sensorFrame,width=50).pack(side=tk.RIGHT)
+tk.Frame(sensorFrame,height=19).pack(side=tk.BOTTOM)
 message2=tk.Label(placeHolder1,text="Select reference:")
 
 message2.grid(row=8,column=0)
@@ -192,12 +224,10 @@ sensor4.grid(row=10,column=4)
 placeHolder1.pack(anchor=tk.CENTER)
 
 
+#*****************************************Define control Buttons*******************************
+controlPanel=tk.Frame(control,width="500",height="300",bd=7)
 
-
-#*****************************************Define control Buttons"""
-controlPanel=tk.Frame(control,width="500",height="300",bd=7,bg="black")
-
-panelLabel=tk.Label(controlPanel,text="____________Control Panel___________")
+panelLabel=tk.Label(controlPanel,text="______________________Control Panel_________________")
 panelLabel.pack(side=tk.TOP)
 
 placeHolder2=tk.Frame(controlPanel,width=300,height=150,bd=6)
@@ -219,16 +249,17 @@ clearB.grid(row=1,column=2)
 resetB=tk.Button(placeHolder2, text="Reset",activebackground="#8E44AD")
 resetB.grid(row=2, column=0)
 #Button that quits the program(Exits the program)
-quitB=tk.Button(placeHolder2,text="Quit",activebackground="#8E44AD")
+quitB=tk.Button(placeHolder2,text="Quit",command=quit,activebackground="#8E44AD")
 quitB.grid(row=2,column=2)
 
+tk.Frame(controlPanel,width=50).pack(side=tk.RIGHT)
 placeHolder2.pack(anchor=tk.CENTER)
 
 
-"""Define Grid dimensions panel and place it in the main window"""
-gridDim=tk.Frame(control,bd=7,bg="black",width="400",height="100")
+#******************************************Define Grid dimensions panel***********************************************
+gridDim=tk.Frame(control,bd=7,width="400",height="100")
 
-gridDimLabel=tk.Label(gridDim,text="_____________Grid Dimesntions______________")
+gridDimLabel=tk.Label(gridDim,text="________________Grid Dimesntions_________________")
 gridDimLabel.pack(side=tk.TOP)
 placeHolder3=tk.Frame(gridDim, bd=6,width="400",height="100")
 
@@ -260,17 +291,70 @@ YminVal.grid(row=2, column=1)
 YmaxLabel.grid(row=3,column=0)
 YmaxVal.grid(row=3, column=1)
 
+temp1=tk.Frame(gridDim, width=103, height=106)
+temp1.pack(side=tk.LEFT)
+
+temp2=tk.Frame(gridDim, width=140, height=106)
+temp2.pack(side=tk.RIGHT)
+
+tk.Frame(gridDim).pack(side=tk.BOTTOM)
 placeHolder3.pack(anchor=tk.CENTER)
+#**************************************************Embedding Matplot Figure in tkinter***************************
+
+# First configure the plot so that the rectangular coodinate system is displayed on the grid
+
+figure,axes=plt.subplots(figsize=(14,4))
+figure.patch.set_facecolor('#ffffff')
+axes.set_aspect("equal")
+#Appy Ranges to Axes
+
+axes.set(xlim=(xMin.get()-1,xMax.get()+1),ylim=(yMin.get()-1,yMax.get()+1))
+
+#set the both axes to zero positon
+
+axes.spines['bottom'].set_position('zero')
+axes.spines['left'].set_position('zero')
+
+#Hide the top and the right spine
+axes.spines['top'].set_visible(False)
+axes.spines['right'].set_visible(False)
+
+#Set x and y labels and add origin label
+axes.set_ylabel('$y$',size=14,labelpad=-24,loc="top")
+axes.set_xlabel('$x$',size=14,labelpad=-21, loc="right",rotation=0)
+plt.text(0.49,0.49,r"$o$",ha='right',va='top',transform=axes.transAxes, horizontalalignment='center',fontsize=14)
+
+#creates x and y ticks and apply them both axes
+x_ticks=np.arange(xMin.get(),xMax.get()+1,1)
+y_ticks=np.arange(yMin.get(),yMax.get()+1,1)
+
+axes.set_xticks(x_ticks[x_ticks !=0])
+axes.set_yticks(y_ticks[y_ticks !=0])
+axes.set_xticks(np.arange(xMin.get(),xMax.get()+1),minor=True)
+axes.set_yticks(np.arange(yMin.get(),yMax.get()+1),minor=True)
+
+#Add grid
+axes.grid(which='both',color='gray',linewidth=1,linestyle='-',alpha=0.2)
+
+#Create a canvas object
+frame=tk.Frame(mainWindow)
+canvas=FigureCanvasTkAgg(figure,frame)
+canvas.get_tk_widget().pack(anchor=tk.CENTER); #this adds the figure into matplotlib
+
+frame.grid(row=1,column=0)
+
+#this updates changes on the plots
 
 
 
-
-signalPanel.place(x=0,y=0) #add signal Properties to the main window
-sensorFrame.place(x=700,y=0)# sensor data Panel
-controlPanel.place(x=357,y=0) #control buttons
-gridDim.place(x=328, y=140)
-
-control.pack()
+signalPanel.place(x=960,y=0) #add signal Properties to the main window
+sensorFrame.place(x=0,y=0)# sensor data Panel
+controlPanel.place(x=550,y=0) #control buttons
+gridDim.place(x=550, y=145)
+results.place(x=960,y=145)
+tk.Frame(mainWindow,height="50").grid(row=2,column=0)
+control.grid(row=0,column=0)
 #sensorFrame.grid(row=3,column=1) 
 mainWindow.mainloop()# invoke the main loop
+
 
