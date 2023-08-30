@@ -7,12 +7,17 @@
 	Created on: 27-08-2023
 
 """
-
-
 #*************import required modules*********
 import tkinter as tk
 from tkinter import ttk
-
+import matplotlib.pyplot as plt
+import numpy as np
+from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.figure import Figure
+import threading
+import time
+from multiprocessing import Process
+from matplotlib.animation import FuncAnimation
 #/**************Define class that holds All tkinter variables that are to be used by the main Aplication
 
 class Variables:
@@ -43,40 +48,45 @@ class Variables:
 
 		#Sensor 1 coordinates
 
-		self.sensor1X=tk.DoubleVar(self.container, value=0.0) #Must be set, not default values will be used
-		self.sensor1Y=tk.DoubleVar(self.container, value=0.0)
+		self.sensor1X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
+		self.sensor1Y=tk.IntVar(self.container, value=0)
 
 		#Sensor 2 coordinates
 
-		self.sensor2X=tk.DoubleVar(self.container, value=0.0) #Must be set, not default values will be used
-		self.sensor2Y=tk.DoubleVar(self.container, value=0.0)
+		self.sensor2X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
+		self.sensor2Y=tk.IntVar(self.container, value=0)
 
 		#Sensor 3 Coordinates
 
-		self.sensor3X=tk.DoubleVar(self.container, value=0.0) #Must be set, not default values will be used
-		self.sensor3Y=tk.DoubleVar(self.container, value=0.0)
+		self.sensor3X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
+		self.sensor3Y=tk.IntVar(self.container, value=0)
 
 		#Sensor 4 Coordinates
 
-		self.sensor4X=tk.DoubleVar(self.container, value=0.0) #Must be set, not default values will be used
-		self.sensor4Y=tk.DoubleVar(self.container, value=0.0)
+		self.sensor4X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
+		self.sensor4Y=tk.IntVar(self.container, value=0)
 		#Variable for Start Button
 
 		self.startButton=tk.StringVar(self.container, value="Start Acquisition")
 
 		#Variables to get data about dimension of the Grid
 
-		self.xMin=tk.IntVar(self.container, value=-5)
-		self.xMax=tk.IntVar(self.container, value=5)
+		self.xMin=tk.IntVar(self.container, value=0)
+		self.xMax=tk.IntVar(self.container, value=80)
 
-		self.yMin=tk.IntVar(self.container, value=-5)
-		self.yMax=tk.IntVar(self.container, value=5)
+		self.yMin=tk.IntVar(self.container, value=0)
+		self.yMax=tk.IntVar(self.container, value=50)
 
 		#Define Variable that Display Results of the Experiment
 
 		self.snr=tk.StringVar(self.container,value="Signal-to-Noise Ration:<Some Value>")
 		self.location=tk.StringVar(self.container,value="Estimaned Location:(x,y)")
 		self.time=tk.StringVar(self.container,value="Computational Time:<time> seconds")
+
+		#Coodinates of the target. This is set by functions in triangulatin algorithms when they are done printing
+
+		self.targetX=tk.IntVar(self.container,value=5)
+		self.targetY=tk.IntVar(self.container,value=5)
 	def reset(self):
 		"""Sets All variables to thier defualt values"""
 		self.gccAlgo.set("gcc-phat")
@@ -88,39 +98,38 @@ class Variables:
 		#sensor 1 will be used checked by default
 		self.sensorSel.set("sensor1") 
 
-
 		#Variables to get sensor data from the user
 
 		#Sensor 1 coordinates
 
-		self.sensor1X.set(0.0) #Must be set, not default values will be used
-		self.sensor1Y.set(0.0)
+		self.sensor1X.set(0) #Must be set, not default values will be used
+		self.sensor1Y.set(0)
 
 		#Sensor 2 coordinates
 
-		self.sensor2X.set(0.0) #Must be set, not default values will be used
-		self.sensor2Y.set(0.0)
+		self.sensor2X.set(0) #Must be set, not default values will be used
+		self.sensor2Y.set(0)
 
 		#Sensor 3 Coordinates
 
-		self.sensor3X.set(0.0) #Must be set, not default values will be used
-		self.sensor3Y.set(0.0)
+		self.sensor3X.set(0) #Must be set, not default values will be used
+		self.sensor3Y.set(0)
 
 		#Sensor 4 Coordinates
 
-		self.sensor4X.set(0.0) #Must be set, not default values will be used
-		self.sensor4Y.set(0.0)
+		self.sensor4X.set(0) #Must be set, not default values will be used
+		self.sensor4Y.set(0)
 		#Variable for Start Button
 
 		self.startButton.set("Start Acquisition")
 
 		#Variables to get data about dimension of the Grid
 
-		self.xMin.set(-5)
-		self.xMax.set(5)
+		self.xMin.set(0)
+		self.xMax.set(80)
 
-		self.yMin.set(-5)
-		self.yMax.set(5)
+		self.yMin.set(0)
+		self.yMax.set(50)
 
 		#Define Variable that Display Results of the Experiment
 
@@ -128,45 +137,46 @@ class Variables:
 		self.location.set("Estimaned Location:(x,y)")
 		self.time.set("Computational Time:<time> seconds")
 
-#/***************Define a class that handles all Control button Widgets on the main window
+#/***************Define a class that handles all Control button Widgets on the main window*********************************
 
 class ControlPanel(tk.Frame):
 	"""
 	"""	
 	#Costructor
-	def __init__(self, mainContainer, container, x_positon=584,y_position=0,width="500",height="300",bd=7):
+	def __init__(self, mainContainer, container, x_positon=500,y_position=0,width="500",height="200",bd=20):
 		"""
 				
 		"""
-		super().__init__(container,width=width,height=height,bd=7)
+		super().__init__(container,width=width,height=height,bd=20,bg="#9900CC")
 		self.mainContainer=mainContainer
 		self.__add_widgets()
 		self.place(x=x_positon,y=y_position) #Place the window are required position
 
 	#Method that adds widgets / buttons to this frame
 	def __add_widgets(self):
-		tk.Label(self,text="__________Control Panel_________",font=("Arial", 15)).pack(side=tk.TOP)
-		self.placeHolder2=tk.Frame(self,width=300,height=150,bd=6)
+		tk.Label(self,text="__________Control Panel_________",font=("Arial", 12),bg="#9900CC").pack(side=tk.TOP)
+		self.placeHolder2=tk.Frame(self,width=300,height=100,bd=6,bg="black")
 
 		#Start Button
-		self.startB=tk.Button(self.placeHolder2, textvariable=self.mainContainer.variable.startButton,command=EventHandler.startButton,activebackground="#8E44AD")
+		self.startB=tk.Button(self.placeHolder2,bd=5, textvariable=self.mainContainer.variable.startButton,command=EventHandler.startButton,activebackground="#FD349C")
 		self.startB.grid(row=0,column=1)
 
 		#plot button
-		self.plotB=tk.Button(self.placeHolder2,text="Plot Target",command=EventHandler.plotButtonAction,activebackground="#8E44AD")
-		self.plotB.grid(row=1,column=0)
+		self.plotB=tk.Button(self.placeHolder2,text="  Plot  ",bd=5,command=EventHandler.plotButtonAction,
+			activebackground="#FD349C")
+		self.plotB.grid(row=0,column=0)
 
 		#clear button
-		self.clearB=tk.Button(self.placeHolder2, text="Clear Plot",command=EventHandler.clearButtonAction,activebackground="#8E44AD")
-		self.clearB.grid(row=1,column=2)
+		self.clearB=tk.Button(self.placeHolder2, text=" Clear ",bd=5,command=EventHandler.clearButtonAction,activebackground="#FD349C")
+		self.clearB.grid(row=1,column=0)
 
 		#quit button
-		self.quitB=tk.Button(self.placeHolder2,text="Quit",command=EventHandler.quitButtonAction,activebackground="#8E44AD")
-		self.quitB.grid(row=2,column=2)
-
+		self.quitB=tk.Button(self.placeHolder2,text="Quit",bd=5,command=EventHandler.quitButtonAction,activebackground="#FD349C")
+		self.quitB.grid(row=0,column=3)
+		tk.Button(self.placeHolder2,text="Play",bd=5,activebackground="#FD349C").grid(row=1,column=3)
 		#reset button
-		self.resetB=tk.Button(self.placeHolder2, text="Reset",command=EventHandler.resetButtonAction,activebackground="#8E44AD")
-		self.resetB.grid(row=2, column=0)
+		self.resetB=tk.Button(self.placeHolder2, text="          Reset        ",bd=5,command=EventHandler.resetButtonAction,activebackground="#FD349C")
+		self.resetB.grid(row=1, column=1)
 
 		self.placeHolder2.pack(anchor=tk.CENTER)
 		tk.Frame(self,width=70).pack(side=tk.RIGHT)
@@ -174,63 +184,58 @@ class ControlPanel(tk.Frame):
 
 class SignalPropertiesPanel(tk.Frame):
 	
-	def __init__(self,mainContainer,container,bd=7,height="300"):
-		super().__init__(container,bd=bd,height=height)
+	def __init__(self,mainContainer,container,bd=20,bg="#9900CC",height="300"):
+		super().__init__(container,bd=bd,bg=bg,height=height)
 		
 		self.mainContainer=mainContainer
-		self.place(x=960,y=0)
+		self.place(x=500,y=150)
 		self.__add_widgets()
 
-
 	def __add_widgets(self):
-		tk.Label(self,text="_________Signal Properties_________",font=("Arial", 15)).pack(side=tk.TOP)
-		self.placeHolder=tk.Frame(self,width="300",height="106",bd=6);
+		tk.Label(self,text="_________Signal Properties_________",font=("Arial", 12),bg="#9900CC").pack(side=tk.TOP)
+		self.placeHolder=tk.Frame(self,width="300",height="106",bd=6,bg="black");
 
-		self.frequency=tk.Label(self.placeHolder,text="Sampling Frequency:")
+		self.frequency=tk.Label(self.placeHolder,text="Sampling Frequency:",bg="white")
 		self.frequency.place(x=5,y=10)
 
 		self.freqInput=tk.Entry(self.placeHolder,bd=1,fg="red",width=10,textvariable=self.mainContainer.variable.frequencyValue)
 
 		self.freqInput.place(x=150,y=10)
 
-		self.freqUnits=tk.Label(self.placeHolder,text="Hz")
+		self.freqUnits=tk.Label(self.placeHolder,text="Hz",bg="white")
 		self.freqUnits.place(x=240,y=10)
 
-		self.message=tk.Label(self.placeHolder,text="Select GCC Algorithm Below:")
+		self.message=tk.Label(self.placeHolder,text="Select GCC Algorithm Below:",bg="white")
 		self.message.place(x=5,y=40)
 
 		#Do More Research on python RadioButtons
-		self.gcc_phat=tk.Radiobutton(self.placeHolder,text="GCC-PHAT",fg="red", bd=5,activeforeground="blue",variable=self.mainContainer.variable.gccAlgo, value="gcc-phat")	
+		self.gcc_phat=tk.Radiobutton(self.placeHolder,text="GCC-PHAT",bg="white",fg="red", bd=5,activeforeground="blue",variable=self.mainContainer.variable.gccAlgo, value="gcc-phat")	
 		self.gcc_phat.place(x=0,y=70)
 
-		self.gcc_scot=tk.Radiobutton(self.placeHolder, text="GCC-SCOT", bd=5,variable=self.mainContainer.variable.gccAlgo,activeforeground="blue", value="gcc-scot")
+		self.gcc_scot=tk.Radiobutton(self.placeHolder, text="GCC-SCOT",bg="white", bd=5,variable=self.mainContainer.variable.gccAlgo,activeforeground="blue", value="gcc-scot")
 		self.gcc_scot.place(x=100,y=70)
-
-		self.gcc_ml=tk.Radiobutton(self.placeHolder, text="GCC-ML", bd=5,variable=self.mainContainer.variable.gccAlgo,activeforeground="blue", value="gcc-ml")
+		tk.Frame(self,height=37,bg="#9900CC").pack(side=tk.BOTTOM)
+		self.gcc_ml=tk.Radiobutton(self.placeHolder, text="GCC-ML", bg="white",bd=5,variable=self.mainContainer.variable.gccAlgo,activeforeground="blue", value="gcc-ml")
 		self.gcc_ml.place(x=200,y=70)
 		self.placeHolder.pack(anchor=tk.CENTER)
 
-
-
-
 class SensorDataPanel(tk.Frame):
 	
-
 	def __init__(self,mainContainer,container,width="500", height="100"):
-		super().__init__(container,width=width,height=height,bd=10)
+		super().__init__(container,width=width,height=height,bd=20,bg="#9900CC")
 		self.mainContainer=mainContainer
-		self.place(x=15,y=0)
+		self.place(x=0,y=0)
 		self.__add_widgets()
 		
 	def __add_widgets(self):
-		tk.Label(self,text="__________________Sensor Data__________________",font=("Arial", 15)).pack()
-		self.placeHolder1=tk.Frame(self,width=300,height=100,bd=6)
+		tk.Label(self,text="__________________Sensor Data__________________",font=("Arial", 12),bg="#9900CC").pack()
+		self.placeHolder1=tk.Frame(self,width=300,height=100,bd=6,bg="black")
 
  		#sensor 1 Configuration
-		self.sensor1L=tk.Label(self.placeHolder1,text=" Sensor 1:")
-		self.sensor1XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:")
+		self.sensor1L=tk.Label(self.placeHolder1,text=" Sensor 1:",bg="#9900CC")
+		self.sensor1XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9900CC")
 		self.sensor1xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor1X)
-		self.sensor1YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:")
+		self.sensor1YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9900CC")
 		self.sensor1yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor1Y) #textfield for y-coordinate Input
 
 		self.sensor1L.grid(row=0,column=0)
@@ -240,10 +245,10 @@ class SensorDataPanel(tk.Frame):
 		self.sensor1yVal.grid(row=1,column=4)
 
 		#Sensor 2 Configuration
-		self.sensor2L=tk.Label(self.placeHolder1,text=" Sensor 2:")
-		self.sensor2XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:")
+		self.sensor2L=tk.Label(self.placeHolder1,text=" Sensor 2:",bg="#9900CC")
+		self.sensor2XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9900CC")
 		self.sensor2xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor2X)
-		self.sensor2YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:")
+		self.sensor2YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9900CC")
 		self.sensor2yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor2Y) #textfield for y-coordinate Input
 
 		self.sensor2L.grid(row=2,column=0)
@@ -254,10 +259,10 @@ class SensorDataPanel(tk.Frame):
 
 		#Sensor 3 Configuration
 
-		self.sensor3L=tk.Label(self.placeHolder1,text=" Sensor 3:")
-		self.sensor3XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:")
+		self.sensor3L=tk.Label(self.placeHolder1,text=" Sensor 3:",bg="#9900CC")
+		self.sensor3XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9900CC")
 		self.sensor3xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor3X)
-		self.sensor3YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:")
+		self.sensor3YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9900CC")
 		self.sensor3yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor3Y) #textfield for y-coordinate Input
 
 		self.sensor3L.grid(row=4,column=0)
@@ -267,10 +272,10 @@ class SensorDataPanel(tk.Frame):
 		self.sensor3yVal.grid(row=5,column=4)
 
 		#Sensor 4 Configuration
-		self.sensor4L=tk.Label(self.placeHolder1,text=" Sensor 4:")
-		self.sensor4XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:")
+		self.sensor4L=tk.Label(self.placeHolder1,text=" Sensor 4:",bg="#9900CC")
+		self.sensor4XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9900CC")
 		self.sensor4xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor4X)
-		self.sensor4YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:")
+		self.sensor4YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9900CC")
 		self.sensor4yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor4Y) #textfield for y-coordinate Input
 
 		self.sensor4L.grid(row=6,column=0)
@@ -281,17 +286,23 @@ class SensorDataPanel(tk.Frame):
 
 		#message to promt the user to select sensor being considered as reference
 
-		tk.Frame(self,width=50).pack(side=tk.RIGHT)
-		tk.Frame(self,height=21).pack(side=tk.BOTTOM)	
-		tk.Label(self.placeHolder1,text="Select reference:").grid(row=8,column=0)
-
+		self.bot=tk.Frame(self,height=60,bg="#9900CC").pack(side=tk.BOTTOM)	
+		tk.Label(self.placeHolder1,text="Select reference:",bg="#9900CC").grid(row=8,column=0)
+		tk.Label(self.bot,text="Please Enter Sensor Coordinate is Centimeters").pack()
 
 		#Reference Sensor Radio Buttons
 
-		self.sensor1=tk.Radiobutton(self.placeHolder1,text="Sensor 1",variable=self.mainContainer.variable.sensorSel, value="sensor1",fg="red",activeforeground="blue")
-		self.sensor2=tk.Radiobutton(self.placeHolder1,text="Sensor 2",variable=self.mainContainer.variable.sensorSel,value="sensor2",activeforeground="blue")
-		self.sensor3=tk.Radiobutton(self.placeHolder1,text="Sensor 3",variable=self.mainContainer.variable.sensorSel,value="sensor3",activeforeground="blue")
-		self.sensor4=tk.Radiobutton(self.placeHolder1,text="Sensor 4",variable=self.mainContainer.variable.sensorSel,value="sensor4",activeforeground="blue")
+		self.sensor1=tk.Radiobutton(self.placeHolder1,text="Sensor 1",
+			variable=self.mainContainer.variable.sensorSel, 
+			value="sensor1",fg="red",
+			activeforeground="blue"
+			,bg="#9900CC")
+		self.sensor2=tk.Radiobutton(self.placeHolder1,
+			text="Sensor 2",variable=self.mainContainer.variable.sensorSel,
+			value="sensor2",activeforeground="blue",
+			bg="#9900CC")
+		self.sensor3=tk.Radiobutton(self.placeHolder1,text="Sensor 3",variable=self.mainContainer.variable.sensorSel,value="sensor3",activeforeground="blue",bg="#9900CC")
+		self.sensor4=tk.Radiobutton(self.placeHolder1,text="Sensor 4",variable=self.mainContainer.variable.sensorSel,value="sensor4",activeforeground="blue",bg="#9900CC")
 
 		self.sensor1.grid(row=10,column=1)	
 		self.sensor2.grid(row=10,column=2)
@@ -308,7 +319,7 @@ class EventHandler:
 	All of the methods defines are class methods.
 	"""	
 	startPressed=False #Class variable that decides if the start method has been pressed or not
-
+	
 	def __init__(self):
 		pass
 
@@ -321,168 +332,221 @@ class EventHandler:
 		"""Sets the value of the container to the one passed in the argument returns true if the  container was set to"""
 		cls.container=container
 
+
 	@classmethod
 	def startButton(cls):
-		if(cls.startPressed):
+		if cls.startPressed:
 			cls.startPressed=False
 			cls.container.variable.startButton.set("Start Acquisition")
 			#Invoke method that starts clock signals of Raspberry Pi
 
 		else:
-			cls.startPressed=True
+
+			if not cls.container.writer.inputValidate():
+				return None
 			cls.container.variable.startButton.set("Stop Acquisition")
-
-
+			cls.startPressed=True
 	@classmethod
 	def plotButtonAction(cls):
-		cls.container.variable.snr.set(f"Signal-to-Noise Ration: {20.98}dB")
-		cls.container.variable.location.set(f"Estimaned Location:x_coord: {456},y_coord: {798}")
-		cls.container.variable.time.set(f"Computational Time:{20.0} milliseconds")
+		VALIDATION=cls.container.writer.inputValidate()
+		if VALIDATION:
+			cls.container.coordinateSystem.plot()
+		return None #Else return from the plot
 	@classmethod
 	def clearButtonAction(cls):
-		pass
-
-		#Invokemethod that remove target from the location
+		cls.container.console.reset()
 	@classmethod
 	def resetButtonAction(cls):
+		cls.startPressed=False 
 		cls.container.variable.reset()
+		cls.container.console.reset()
+		cls.container.coordinateSystem.clear()
 		#invoke function that clears the target plot
-#**************Class that represent the results panel of the application***********************
 
-class ResultsPanel(tk.Frame):
-	"""A class that holds Labels which display the results of the system to the main application"""
-	def __init__(self, mainContainer, container, width="100", height="100", x_position=960, y_position=154):
-		"""Creates a new instance of the class with the given container and at the given location"""
-		super().__init__(container,width=width,height=height)
-		
-		self.mainContainer=mainContainer
-		self.__add_widgets()
-		self.place(x=x_position,y=y_position)
-		#Not completed
-	def __add_widgets(self):
-		tk.Label(self,text="_____________Results______________",font=("Arial", 15)).pack(side=tk.TOP)
-		self.center=tk.Frame(self,width="100", height="100")	
-		self.targetLocation=tk.Label(self.center,textvariable=self.mainContainer.variable.location)
-		self.targetLocation.grid(row=0,column=0) #place the label nicely
-
-		self.signalToNoise=tk.Label(self.center,textvariable=self.mainContainer.variable.snr)
-		self.signalToNoise.grid(row=1,column=0)
-
-		self.computationalTime=tk.Label(self.center,textvariable=self.mainContainer.variable.time)
-		self.computationalTime.grid(row=2,column=0)
-		tk.Frame(self,width=105).pack(side=tk.RIGHT)
-		tk.Frame(self,height=57).pack(side=tk.BOTTOM)
-		self.center.pack(anchor=tk.CENTER)	
-
-
-
-	def setTargetLocation(self,loc):
-		"""Sets the value of the target location Label to the string passed into the argument"""
-		self.mainContainer.variable.location.set(loc)
-
-	def setSignalToNoise(self,ratio):
-		"""Sets the value of the signal to noise ratio Label to the string passed into the argument"""
-		self.mainContainer.variable.snr.set(ratio)
-
-	def setTime(self, newTime):
-		"""Sets the value of the time label to the string passed"""
-		self.mainContainer.variable.time.set(newTime)
-
-
-
-#**********Define class that represents the main control frame of the application**************************
-
-class MainControl(tk.Frame):
-	"""Class that represents the main control pannel of the application"""
-	def __init__(self,container,color,width,height):
-		
-		super().__init__(container,width=width,height=height,bg=color,bd=10)
-		self.pack(side=tk.TOP) #place the control button at the top
-
-#************************Class that add coordinate system into the user************************************
 
 class CoordinateSystem(tk.Frame):
 	"""
 		Class that represents the c
 	"""
-class GridDimensions(tk.Frame):
-	"""
-		A Class that represents that panel that inputs Grid dimensions from the user
-	"""
-	def __init__(self,mainContainer,container,bd=7,width="400",height="100"):
-		super().__init__(container,width=width,height=height,bd=bd)
+	def __init__(self,mainContainer,container,width="400",height="400",x_position=843,y_position=0):
+		super().__init__(container,width=width,height=height,bg="white")
 		self.mainContainer=mainContainer
+		self.place(x=x_position,y=y_position)
+		self.fig,self.ax=plt.subplots(figsize=(5,5))
+		self.plotConfig()
+	def plotConfig(self):
+		tk.Label(self,text="______________________Rectangular Grid____________________",bg="white",font=("Arial",12)).pack(side=tk.TOP)
+		self.fig.patch.set_facecolor('#ffffff')
+		self.ax.set(xlim=(self.mainContainer.variable.xMin.get()-1,self.mainContainer.variable.xMax.get()+1),ylim=(self.mainContainer.variable.yMin.get()-1,self.mainContainer.variable.yMax.get()+1))
+		self.resetPlot()
+		self.canvas=FigureCanvasTkAgg(self.fig,self)
+		self.canvas.get_tk_widget().pack(anchor=tk.CENTER)
+
+		self.toolbar = NavigationToolbar2Tk(self.canvas, self, pack_toolbar=False)
+		self.toolbar.update()
+		self.toolbar.pack(side=tk.BOTTOM, fill=tk.X)
+	def resetPlot(self):
+		self.ax.set(xlim=(self.mainContainer.variable.xMin.get()-1,self.mainContainer.variable.xMax.get()+1),ylim=(self.mainContainer.variable.yMin.get()-1,self.mainContainer.variable.yMax.get()+1))
+		self.ax.set_aspect("equal")
+		self.ax.spines['bottom'].set_position('zero')
+		self.ax.spines['left'].set_position('zero')
+		self.ax.spines['top'].set_visible(False)
+		self.ax.spines['right'].set_visible(False)
+		self.ax.set_ylabel('$y(cm)$',size=7,labelpad=-24,loc="top")
+		self.ax.set_xlabel('$x(cm)$',size=7,labelpad=-21, loc="right",rotation=0)
+		plt.text(0,0,r"$o$",ha='right',va='top',transform=self.ax.transAxes, horizontalalignment='center',fontsize=7)
+		self.x_ticks=np.arange(self.mainContainer.variable.xMin.get(),self.mainContainer.variable.xMax.get()+1,10)
+		self.y_ticks=np.arange(self.mainContainer.variable.yMin.get(),self.mainContainer.variable.yMax.get()+1,10)
+		self.ax.set_xticks(self.x_ticks[self.x_ticks !=0])
+		self.ax.set_yticks(self.y_ticks[self.y_ticks !=0])
+		self.ax.set_xticks(np.arange(self.mainContainer.variable.xMin.get(),self.mainContainer.variable.xMax.get()+1),minor=True)
+		self.ax.set_yticks(np.arange(self.mainContainer.variable.yMin.get(),self.mainContainer.variable.yMax.get()+1),minor=True)
+		self.ax.grid(which='both',color='gray',linewidth=1,linestyle='-',alpha=0.2)
+
+
+	def plot(self):
+		self.ax.cla()
+		x1=self.mainContainer.variable.sensor1X.get() #x-coordinate of sensor 1
+		y1=self.mainContainer.variable.sensor1Y.get() #y-coordintae of sensor 2
+		x2=self.mainContainer.variable.sensor2X.get()
+		y2=self.mainContainer.variable.sensor2Y.get()
+
+		x3=self.mainContainer.variable.sensor3X.get()
+		y3=self.mainContainer.variable.sensor3Y.get()
+
+		x4=self.mainContainer.variable.sensor4X.get()
+		y4=self.mainContainer.variable.sensor4Y.get()
+
+		xv=[x1,x2,x3,x4]
+		yv=[y1,y2,y3,y4]
+		self.resetPlot()
+		self.ax.plot(xv,yv,'bo',markersize=5)
+		self.ax.annotate("sensor1",xy=(x1,y1))
+		self.ax.annotate("sensor2",xy=(x2,y2))
+		self.ax.annotate("sensor3",xy=(x3,y3))
+		self.ax.annotate("sensor4",xy=(x4,y4))
+		self.canvas.draw()
+
+	def clear(self):
+		self.ax.cla() #clear the plot
+		self.resetPlot() #reset the plot to it default value
+
+
+
+class Console(tk.Frame):
+	"""
+	A class that resents the console where errors are printed.
+	"""
+	def __init__(self,mainContainer,container):
+		super().__init__(container,width="300",height="100",bg="white",bd=10)
+		self.mainContainer=mainContainer
+		self.text=tk.Text(self,width="102",height="40")
 		self.__add_widgets()
-		self.place(x=574, y=154)
-
+		self.text.insert(tk.END,"*****************Welcome to Acoustic Traiangulation System***************\n")
+		self.place(x=0,y=360)
 	def __add_widgets(self):
-		tk.Label(self,text="________Grid Dimensions___________",font=("Arial", 15)).pack(side=tk.TOP)
-		self.placeHolder3=tk.Frame(self, bd=6,width="400",height="100")
+		tk.Label(self,text="_______________________Console________________________",font=("Arial", 12),bg="white").pack(side=tk.TOP)
+		self.text.pack(anchor=tk.CENTER)
+	def reset(self):
+			self.text.delete("1.0",tk.END)
+			self.text.insert(tk.END,"*****************Welcome to Acoustic Traiangulation System****************\n")
+class ConsoleWritter:
+	"""
+		Class that tracks Errors within the program and display them on the console
+	"""
+	def __init__(self,container,console):
+		self.variable=container.variable
+		self.console=console  #console where errors are printed
+		self.accumulated=""
+		self.container=container
+	def inputValidate(self):
 
-		#Minimum x-coordinate
-		self.XminLabel=tk.Label(self.placeHolder3, text="Xmin:")
-		self.XminVal=tk.Entry(self.placeHolder3,width=10,textvariable=self.mainContainer.variable.xMin)
-		#Maximum x-coordinate
-		
-		self.XmaxLabel=tk.Label(self.placeHolder3, text="Xmax:")
-		self.XmaxVal=tk.Entry(self.placeHolder3,width=10,textvariable=self.mainContainer.variable.xMax)
-		#Minimum y-coordinate
-		
-		self.YminLabel=tk.Label(self.placeHolder3, text="Ymin:")
-		
-		self.YminVal=tk.Entry(self.placeHolder3,width=10,textvariable=self.mainContainer.variable.yMin)
-		#Maximum y-Coordinate
-		
-		self.YmaxLabel=tk.Label(self.placeHolder3, text="Xmax:")
-		self.YmaxVal=tk.Entry(self.placeHolder3,width=10,textvariable=self.mainContainer.variable.yMax)
+		if self.variable.sensor1X.get()<0 or self.container.variable.sensor1X.get()>80 or self.container.variable.sensor1Y.get()<0 or self.container.variable.sensor1Y.get()>50:
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 is out of bounds!\n")
+			return False
+		elif self.container.variable.sensor2X.get()<0 or self.container.variable.sensor2X.get()>80 or  self.container.variable.sensor2Y.get()<0 or self.container.variable.sensor2Y.get()>50:
+			self.container.console.text.insert(tk.END,"Error: Sensor 2 is out of bounds!\n")
+			return False
+		elif self.container.variable.sensor3X.get()<0 or self.container.variable.sensor3X.get()>80 or  self.container.variable.sensor3Y.get()<0 or  self.container.variable.sensor3Y.get()>50:
+			self.container.console.text.insert(tk.END,"Error: Sensor 3 is out of bounds!\n")
+			return False
+		elif self.container.variable.sensor4X.get()<0 or self.container.variable.sensor4X.get()>80 or self.container.variable.sensor4Y.get()<0 or self.container.variable.sensor4Y.get()>50:
+			self.container.console.text.insert(tk.END,"Error: Sensor 4 is out of bounds!\n")
+			return False
 
-		#add labels
-		self.XminLabel.grid(row=0,column=0)
-		self.XminVal.grid(row=0, column=1)
-
-		self.XmaxLabel.grid(row=1,column=0)
-		self.XmaxVal.grid(row=1, column=1)
-
-		self.YminLabel.grid(row=2,column=0)
-		self.YminVal.grid(row=2, column=1)
-
-		self.YmaxLabel.grid(row=3,column=0)
-		self.YmaxVal.grid(row=3, column=1)
-
-		tk.Frame(self, width=100, height=106).pack(side=tk.LEFT)
-		tk.Frame(self, width=120, height=106).pack(side=tk.RIGHT)
-
-		tk.Frame(self).pack(side=tk.BOTTOM)
-		self.placeHolder3.pack(anchor=tk.CENTER)
-
+		if self.container.variable.sensor1X.get()==self.container.variable.sensor2X.get() and self.container.variable.sensor1Y.get()==self.container.variable.sensor2Y.get():
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 2 can not have similar coordinates!\n")
+			return False
+		elif self.container.variable.sensor1X.get()==self.container.variable.sensor3X.get() and self.container.variable.sensor1Y.get()==self.container.variable.sensor3Y.get():
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 3 can not have similar coordinates!\n")
+			return False
+		elif self.container.variable.sensor1X.get()==self.container.variable.sensor4X.get() and self.container.variable.sensor1Y.get()==self.container.variable.sensor4Y.get():
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 4 can not have similar coordinates!\n")
+			return False
+		elif self.container.variable.sensor3X.get()==self.container.variable.sensor2X.get() and self.container.variable.sensor3Y.get()==self.container.variable.sensor2Y.get():
+			self.container.console.text.insert(tk.END,"Error: Sensor 2 and Sensor 3 can not have similar coordinates!\n")
+			return False
+		elif self.container.variable.sensor4X.get()==self.container.variable.sensor2X.get() and self.container.variable.sensor4Y.get()==self.container.variable.sensor2Y.get():
+			self.container.console.text.insert(tk.END,"Error: Sensor 2 and Sensor 4 can not have similar coordinates!\n")
+			return False
+		elif self.container.variable.sensor3X.get()==self.container.variable.sensor4X.get() and self.container.variable.sensor4Y.get()==self.container.variable.sensor3Y.get():
+			self.container.console.text.insert(tk.END,"Error: Sensor 3 and Sensor 4 can not have similar coordinates!\n")
+			return False
+		elif self.container.variable.frequencyValue.get()<0:
+			self.container.console.text.insert(tk.END,"Error: Sampling Frequency can  not be negative!\n")
+			return False
+		else:
+			return True
 
 #************************************Main Application***************************
 class Application(tk.Tk):
 	"""
 		A class	Represents the main Application
-		
 	"""
 	def __init__(self,width,height,title):
 		super().__init__()
 		self.geometry(width+"x"+height)
 		EventHandler.setContainer(self)
-		self.variable=Variables(self)
 		self.title(title)
-		self.mainControl=MainControl(self,"black","1500","320")
-		self.gridDimensions=GridDimensions(self,self.mainControl)
-		self.signalPropertiesPanel=SignalPropertiesPanel(self,self.mainControl)
-		self.sensors=SensorDataPanel(self,self.mainControl)
-		self.res=ResultsPanel(self,self.mainControl)
-		self.control=ControlPanel(self,self.mainControl)
+		self.variable=Variables(self) #Creat isntance of tk Varaibles
+		self.__add_widgets()
+		#Instantiate the background frame object 
+
+		#instantiate the contorl signal Data panel
+		
+	def __add_widgets(self):
+		self.background=BackgroundFrame(self)
+		self.sensor=SensorDataPanel(self,self.background) #add sensor data frame
+		self.control=ControlPanel(self,self.background) #Add control panel frame
+		self.console=Console(self,self.background) #add the console frame
+		self.signalPropertiesPanel=SignalPropertiesPanel(self,self.background) #add signal properties panel
+		self.coordinateSystem=CoordinateSystem(self,self.background) #Add coordinate System Frame
+		self.writer=ConsoleWritter(self,self.console)
+		self.dis=Display(self)
 
 	def display(self):
 		self.mainloop()
+class BackgroundFrame(tk.Frame):
+	"""
+		A Class that presents a frame object where all other frames are enchored.
 
-
+	"""
+	#Will be static Class
+	def __init__(self,parent):
+		super().__init__(parent,width=1500,height=750,bg="black",bd=10) #Just create a Frame object of the same size and main Window
+		self.pack(anchor=tk.CENTER)
+class Display(tk.Frame):
+	"""A Class that displays information on the screen"""
+	def __init__(self,parent):
+		super().__init__(parent,width="150",height="1200",bg="white")
+		tk.Label(self,text="_____EEE3097S-GROUP 4_____",bg='white',font=("Trattatello,",25)).grid(row=0,column=0)
+		tk.Label(self,text="1.Miss   Pius",font=("Trattatello,",15),bg="white").grid(row=1,column=0)
+		tk.Label(self,text="2.Mr. Mutetwa",font=("Trattatello,",15),bg="white").grid(row=2,column=0)
+		tk.Label(self,text="3.Prof Chabeli",font=("Trattatello,",15),bg="white").grid(row=3,column=0)
+		self.place(x=854,y=580)
 def main():
 	myApp=Application("1500","800","Acoustic Localization")
 	myApp.display()
-
 def quit(app):
 		app.destroy()
 if __name__ == '__main__':

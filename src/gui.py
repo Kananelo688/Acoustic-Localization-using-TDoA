@@ -73,12 +73,6 @@ snr=tk.StringVar(value="Signal-to-Noise Ration:<Some Value>")
 location=tk.StringVar(value="Estimaned Location:(x,y)")
 time=tk.StringVar(value="Computational Time:<time> seconds")
 
-#************************************Function Invoked when button are pressed**********************************
-
-
-def quit():
-    """Terminates the program when run"""
-    mainWindow.destroy()
 
 #**********************************Panel that houses all User Widgets***************************************
 
