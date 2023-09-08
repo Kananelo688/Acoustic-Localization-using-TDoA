@@ -8,6 +8,7 @@
 
 """
 #*************import required modules*********
+
 import tkinter as tk
 from tkinter import ttk
 import matplotlib.pyplot as plt
@@ -18,6 +19,9 @@ import threading
 import time
 from multiprocessing import Process
 from matplotlib.animation import FuncAnimation
+import os
+import glob
+import signalProcessing as sp
 #/**************Define class that holds All tkinter variables that are to be used by the main Aplication
 
 class Variables:
@@ -173,7 +177,7 @@ class ControlPanel(tk.Frame):
 		#quit button
 		self.quitB=tk.Button(self.placeHolder2,text="Quit",bd=5,command=EventHandler.quitButtonAction,activebackground="#FD349C")
 		self.quitB.grid(row=0,column=3)
-		tk.Button(self.placeHolder2,text="Play",bd=5,activebackground="#FD349C").grid(row=1,column=3)
+		tk.Button(self.placeHolder2,text="Play",bd=5,activebackground="#FD349C",command=EventHandler.playButtonAction).grid(row=1,column=3)
 		#reset button
 		self.resetB=tk.Button(self.placeHolder2, text="          Reset        ",bd=5,command=EventHandler.resetButtonAction,activebackground="#FD349C")
 		self.resetB.grid(row=1, column=1)
@@ -361,7 +365,13 @@ class EventHandler:
 		cls.container.variable.reset()
 		cls.container.console.reset()
 		cls.container.coordinateSystem.clear()
-		#invoke function that clears the target plot
+		#invoke function that clears the target plo
+	@classmethod
+	def playButtonAction(cls):
+		directory = '/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/'
+		for filename in os.listdir(directory):
+			f=os.path.join(directory,filename)
+			cls.container.audioReader.read_wav(f,True)
 
 
 class CoordinateSystem(tk.Frame):
@@ -510,6 +520,10 @@ class Application(tk.Tk):
 		self.title(title)
 		self.variable=Variables(self) #Creat isntance of tk Varaibles
 		self.__add_widgets()
+		#Object that will read audio data when button pressed
+		self.audioReader=sp.AudioReader(self.console)
+		#Object that wil be used to calculate TDoA
+		self.tdoaEstimator=sp.TDoA_Estimator(self.console)
 		#Instantiate the background frame object 
 
 		#instantiate the contorl signal Data panel
