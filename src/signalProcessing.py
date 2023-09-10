@@ -71,21 +71,23 @@ class AudioReader:
 	def read_wav(self,filename,play=False):
 		self.rate,self.data=io.wavfile.read(filename)
 		if play:
-			self.console.text.insert(tk.END,f"Playing audio: {filename}\n")
 			sd.play(self.data,self.rate)
+			sd.wait() #Wait for the audio to finish playing
 		return self.data,self.rate
-	def record_wav(filename,duration,rate,channels=1):
+	def record_wav(self,filename,duration,rate,channels=1):
 		self.recording=sd.rec(int(duration*rate),samplerate=rate,channels=channels)
 		self.console.text.insert(tk.END,"Recording...\n")
 		sd.wait()
 		self.console.text.insert(tk.END,"Done.\n")
 		io.wavfile.write(filename,rate,recording)
 		return self.recording
+	def wait(self):
+		sd.wait()
 class TDoA_Estimator:
 	
 	def __init__(self,console=None):
 		self.console=console
-	def gcc_phat(self,signal1,signal2,rate=1,plot=False,title="Cross Correleration function between signals",display=False):
+	def gcc_phat(self,signal1,signal2,rate=1,plot=False,title="Cross Correleration function between signals"):
 		self.N=len(signal1)+len(signal2)
 		self.SIGNAL1=np.fft.fft(signal1,n=self.N)
 		self.SIGNAL2=np.fft.fft(signal2,n=self.N)
