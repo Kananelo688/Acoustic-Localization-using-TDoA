@@ -25,7 +25,7 @@ import glob
 import signalProcessing as sp
 import signalAcquisition as sa
 
-
+import triangulation as tr
 
 #/**************Define class that holds All tkinter variables that are to be used by the main Aplication
 
@@ -55,22 +55,32 @@ class Variables:
 
 		#Variables to get sensor data from the user
 
-		#Sensor 1 coordinates
+		#Initial Target Location for Optimization Algorithm
+		self.initialX=tk.IntVar(self.container,value=0)
+		self.initialY=tk.IntVar(self.container,value=0)
+
+		#Actual Target Location(Need when testing Multilaaterization)
+
+
+		self.actualX=tk.IntVar(self.container,value=0)
+		self.actualY=tk.IntVar(self.container,value=0)
+
+		#Sensor 1 Coords
 
 		self.sensor1X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
 		self.sensor1Y=tk.IntVar(self.container, value=0)
 
-		#Sensor 2 coordinates
+		#Sensor 2 coords
 
 		self.sensor2X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
 		self.sensor2Y=tk.IntVar(self.container, value=0)
 
-		#Sensor 3 Coordinates
+		#Sensor 3 Coords
 
 		self.sensor3X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
 		self.sensor3Y=tk.IntVar(self.container, value=0)
 
-		#Sensor 4 Coordinates
+		#Sensor 4 Coords
 
 		self.sensor4X=tk.IntVar(self.container, value=0) #Must be set, not default values will be used
 		self.sensor4Y=tk.IntVar(self.container, value=0)
@@ -78,24 +88,15 @@ class Variables:
 
 		self.startButton=tk.StringVar(self.container, value="Start Acquisition")
 
-		#Variables to get data about dimension of the Grid
 
-		self.xMin=tk.IntVar(self.container, value=0)
-		self.xMax=tk.IntVar(self.container, value=80)
+		self.xMin=tk.IntVar(self.container,value=0)
+		self.yMin=tk.IntVar(self.container,value=0)
+		self.xMax=tk.IntVar(self.container,value=80)
+		self.yMax=tk.IntVar(self.container,value=50)
 
-		self.yMin=tk.IntVar(self.container, value=0)
-		self.yMax=tk.IntVar(self.container, value=50)
 
-		#Define Variable that Display Results of the Experiment
 
-		self.snr=tk.StringVar(self.container,value="Signal-to-Noise Ration:<Some Value>")
-		self.location=tk.StringVar(self.container,value="Estimaned Location:(x,y)")
-		self.time=tk.StringVar(self.container,value="Computational Time:<time> seconds")
 
-		#Coodinates of the target. This is set by functions in triangulatin algorithms when they are done printing
-
-		self.targetX=tk.IntVar(self.container,value=5)
-		self.targetY=tk.IntVar(self.container,value=5)
 	def reset(self):
 		"""Sets All variables to thier defualt values"""
 		self.gccAlgo.set("gcc-phat")
@@ -109,42 +110,36 @@ class Variables:
 
 		#Variables to get sensor data from the user
 
-		#Sensor 1 coordinates
+		#Sensor 1 coords
 
 		self.sensor1X.set(0) #Must be set, not default values will be used
 		self.sensor1Y.set(0)
 
-		#Sensor 2 coordinates
+		#Sensor 2 coords
 
 		self.sensor2X.set(0) #Must be set, not default values will be used
 		self.sensor2Y.set(0)
 
-		#Sensor 3 Coordinates
+		#Sensor 3 Coords
 
 		self.sensor3X.set(0) #Must be set, not default values will be used
 		self.sensor3Y.set(0)
 
-		#Sensor 4 Coordinates
+		#Sensor 4 Coords
 
 		self.sensor4X.set(0) #Must be set, not default values will be used
 		self.sensor4Y.set(0)
 		#Variable for Start Button
 
 		self.startButton.set("Start Acquisition")
+		self.initialX.set(0)
+		self.initialY.set(0)
 
-		#Variables to get data about dimension of the Grid
+		#Actual Target Location(Need when testing Multilaaterization)
 
-		self.xMin.set(0)
-		self.xMax.set(80)
 
-		self.yMin.set(0)
-		self.yMax.set(50)
-
-		#Define Variable that Display Results of the Experiment
-
-		self.snr.set("Signal-to-Noise Ration:<Some Value>")
-		self.location.set("Estimaned Location:(x,y)")
-		self.time.set("Computational Time:<time> seconds")
+		self.actualX.set(0)
+		self.actualY.set(0)
 
 #/***************Define a class that handles all Control button Widgets on the main window*********************************
 
@@ -180,7 +175,7 @@ class ControlPanel(tk.Frame):
 		self.clearB.grid(row=1,column=0)
 
 		#quit button
-		self.quitB=tk.Button(self.placeHolder2,text="Quit",bd=5,command=EventHandler.quitButtonAction,activebackground="#FD349C")
+		self.quitB=tk.Button(self.placeHolder2,text="Exit",bd=5,command=EventHandler.quitButtonAction,activebackground="#FD349C")
 		self.quitB.grid(row=0,column=3)
 		tk.Button(self.placeHolder2,text="Play",bd=5,activebackground="#FD349C",command=EventHandler.playButtonAction).grid(row=1,column=3)
 		#reset button
@@ -204,17 +199,17 @@ class SignalPropertiesPanel(tk.Frame):
 		tk.Label(self,text="_________Signal Properties_________",font=("Arial", 12),bg="#9ef051").pack(side=tk.TOP)
 		self.placeHolder=tk.Frame(self,width="300",height="106",bd=6,bg="black");
 
-		self.frequency=tk.Label(self.placeHolder,text="Sampling Frequency:",bg="white")
+		self.frequency=tk.Label(self.placeHolder,text="Sampling Frequency:",bg="#9ef051")
 		self.frequency.place(x=5,y=10)
 
 		self.freqInput=tk.Entry(self.placeHolder,bd=1,fg="red",width=10,textvariable=self.mainContainer.variable.frequencyValue)
 
 		self.freqInput.place(x=150,y=10)
 
-		self.freqUnits=tk.Label(self.placeHolder,text="Hz",bg="white")
+		self.freqUnits=tk.Label(self.placeHolder,text="Hz",bg="#9ef051")
 		self.freqUnits.place(x=240,y=10)
 
-		self.message=tk.Label(self.placeHolder,text="Select GCC Algorithm Below:",bg="white")
+		self.message=tk.Label(self.placeHolder,text="Select GCC Algorithm Below:",bg="#9ef051")
 		self.message.place(x=5,y=40)
 
 		#Do More Research on python RadioButtons
@@ -239,13 +234,31 @@ class SensorDataPanel(tk.Frame):
 	def __add_widgets(self):
 		tk.Label(self,text="__________________Sensor Data__________________",font=("Arial", 12),bg="#9ef051").pack()
 		self.placeHolder1=tk.Frame(self,width=300,height=100,bd=6,bg="black")
+		#Target information
+		self.actualLab=tk.Label(self.placeHolder1,text="Target Coords:",bg="#9ef051")
+
+		self.actualXL=tk.Label(self.placeHolder1,text="x-coord: ",bg="#9ef051")
+		self.actualXVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.actualX)
+
+		self.actualYL=tk.Label(self.placeHolder1,text="y-coord: ",bg="#9ef051")
+		self.actuaYVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.actualY)
+
+		#Initial Target Estimate Information
+		self.initialLab=tk.Label(self.placeHolder1,text="Initial Estimate:",bg="#9ef051")
+		self.initialXL=tk.Label(self.placeHolder1,text="x-coord: ",bg="#9ef051")
+		self.initialXVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.initialX)
+
+		self.initialYL=tk.Label(self.placeHolder1,text="y-coord: ",bg="#9ef051")
+		self.initialYVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.initialY)
+
+
 
  		#sensor 1 Configuration
 		self.sensor1L=tk.Label(self.placeHolder1,text=" Sensor 1:",bg="#9ef051")
-		self.sensor1XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9ef051")
+		self.sensor1XcoordL=tk.Label(self.placeHolder1,text="x-coord:",bg="#9ef051")
 		self.sensor1xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor1X)
-		self.sensor1YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9ef051")
-		self.sensor1yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor1Y) #textfield for y-coordinate Input
+		self.sensor1YCoordL=tk.Label(self.placeHolder1,text="y-coord:",bg="#9ef051")
+		self.sensor1yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor1Y) #textfield for y-coord Input
 
 		self.sensor1L.grid(row=0,column=0)
 		self.sensor1XcoordL.grid(row=1,column=1)
@@ -255,10 +268,10 @@ class SensorDataPanel(tk.Frame):
 
 		#Sensor 2 Configuration
 		self.sensor2L=tk.Label(self.placeHolder1,text=" Sensor 2:",bg="#9ef051")
-		self.sensor2XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9ef051")
+		self.sensor2XcoordL=tk.Label(self.placeHolder1,text="x-coord:",bg="#9ef051")
 		self.sensor2xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor2X)
-		self.sensor2YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9ef051")
-		self.sensor2yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor2Y) #textfield for y-coordinate Input
+		self.sensor2YCoordL=tk.Label(self.placeHolder1,text="y-coord:",bg="#9ef051")
+		self.sensor2yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor2Y) #textfield for y-coord Input
 
 		self.sensor2L.grid(row=2,column=0)
 		self.sensor2XcoordL.grid(row=3,column=1)
@@ -269,10 +282,10 @@ class SensorDataPanel(tk.Frame):
 		#Sensor 3 Configuration
 
 		self.sensor3L=tk.Label(self.placeHolder1,text=" Sensor 3:",bg="#9ef051")
-		self.sensor3XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9ef051")
+		self.sensor3XcoordL=tk.Label(self.placeHolder1,text="x-coord:",bg="#9ef051")
 		self.sensor3xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor3X)
-		self.sensor3YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9ef051")
-		self.sensor3yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor3Y) #textfield for y-coordinate Input
+		self.sensor3YCoordL=tk.Label(self.placeHolder1,text="y-coord:",bg="#9ef051")
+		self.sensor3yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor3Y) #textfield for y-coord Input
 
 		self.sensor3L.grid(row=4,column=0)
 		self.sensor3XcoordL.grid(row=5,column=1)
@@ -282,10 +295,10 @@ class SensorDataPanel(tk.Frame):
 
 		#Sensor 4 Configuration
 		self.sensor4L=tk.Label(self.placeHolder1,text=" Sensor 4:",bg="#9ef051")
-		self.sensor4XcoordL=tk.Label(self.placeHolder1,text="x-coordinate:",bg="#9ef051")
+		self.sensor4XcoordL=tk.Label(self.placeHolder1,text="x-coord:",bg="#9ef051")
 		self.sensor4xVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor4X)
-		self.sensor4YCoordL=tk.Label(self.placeHolder1,text="y-coordinate:",bg="#9ef051")
-		self.sensor4yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor4Y) #textfield for y-coordinate Input
+		self.sensor4YCoordL=tk.Label(self.placeHolder1,text="y-coord:",bg="#9ef051")
+		self.sensor4yVal=tk.Entry(self.placeHolder1,width=10,textvariable=self.mainContainer.variable.sensor4Y) #textfield for y-coord Input
 
 		self.sensor4L.grid(row=6,column=0)
 		self.sensor4XcoordL.grid(row=7,column=1)
@@ -296,8 +309,23 @@ class SensorDataPanel(tk.Frame):
 		#message to promt the user to select sensor being considered as reference
 
 		self.bot=tk.Frame(self,height=60,bg="#9ef051").pack(side=tk.BOTTOM)	
-		tk.Label(self.placeHolder1,text="Select reference:",bg="#9ef051").grid(row=8,column=0)
-		tk.Label(self.bot,text="Please Enter Sensor Coordinate is Centimeters").pack()
+		tk.Label(self.placeHolder1,text="Select reference:",bg="#9ef051").grid(row=12,column=0)
+		tk.Label(self.bot,text="Please Enter Sensor Coord is Centimeters").pack()
+
+		self.actualLab.grid(row=8,column=0)
+		self.actualXL.grid(row=9,column=1)
+		self.actualXVal.grid(row=9,column=2)
+		self.actualYL.grid(row=9,column=3)
+		self.actuaYVal.grid(row=9,column=4)
+
+		self.initialLab.grid(row=10,column=0)
+		self.initialXL.grid(row=11,column=1)
+		self.initialXVal.grid(row=11,column=2)
+		self.initialYL.grid(row=11,column=3)
+		self.initialYVal.grid(row=11,column=4)
+
+
+
 
 		#Reference Sensor Radio Buttons
 
@@ -305,18 +333,21 @@ class SensorDataPanel(tk.Frame):
 			variable=self.mainContainer.variable.sensorSel, 
 			value="sensor1",fg="red",
 			activeforeground="blue"
-			,bg="#9ef051")
+			,bg="white")
 		self.sensor2=tk.Radiobutton(self.placeHolder1,
 			text="Sensor 2",variable=self.mainContainer.variable.sensorSel,
 			value="sensor2",activeforeground="blue",
-			bg="#9ef051")
-		self.sensor3=tk.Radiobutton(self.placeHolder1,text="Sensor 3",variable=self.mainContainer.variable.sensorSel,value="sensor3",activeforeground="blue",bg="#9ef051")
-		self.sensor4=tk.Radiobutton(self.placeHolder1,text="Sensor 4",variable=self.mainContainer.variable.sensorSel,value="sensor4",activeforeground="blue",bg="#9ef051")
+			bg="white")
+		self.sensor3=tk.Radiobutton(self.placeHolder1,text="Sensor 3",
+			variable=self.mainContainer.variable.sensorSel,
+			value="sensor3",activeforeground="blue",bg="white")
+		self.sensor4=tk.Radiobutton(self.placeHolder1,text="Sensor 4",
+			variable=self.mainContainer.variable.sensorSel,value="sensor4",activeforeground="blue",bg="white")
 
-		self.sensor1.grid(row=10,column=1)	
-		self.sensor2.grid(row=10,column=2)
-		self.sensor3.grid(row=10,column=3)
-		self.sensor4.grid(row=10,column=4)
+		self.sensor1.grid(row=13,column=1)	
+		self.sensor2.grid(row=13,column=2)
+		self.sensor3.grid(row=13,column=3)
+		self.sensor4.grid(row=13,column=4)
 
 		self.placeHolder1.pack(anchor=tk.CENTER)
 
@@ -334,7 +365,7 @@ class EventHandler:
 
 	@classmethod
 	def quitButtonAction(cls):
-		"""Terminates the program when invoked"""
+		"""Terms the program when invoked"""
 		cls.container.destroy()
 	@classmethod			
 	def setContainer(cls,container):		
@@ -364,7 +395,8 @@ class EventHandler:
 	def plotButtonAction(cls):
 		VALIDATION=cls.container.writer.inputValidate()
 		if VALIDATION:
-			cls.container.coordinateSystem.plot()
+			cls.container.coordSystem.plot()#Plot Sensors
+			tr.executer(cls.container.variable,cls.container.console,cls.container.coordSystem)#Plot target
 		return None #Else return from the plot
 	@classmethod
 	def clearButtonAction(cls):
@@ -374,7 +406,7 @@ class EventHandler:
 		cls.startPressed=False 
 		cls.container.variable.reset()
 		cls.container.console.reset()
-		cls.container.coordinateSystem.clear()
+		cls.container.coordSystem.clear()
 		#invoke function that clears the target plot
 	@classmethod
 	def playButtonAction(cls):
@@ -383,7 +415,7 @@ class EventHandler:
 			f=os.path.join(cls.directory,filename)
 			cls.container.console.text.insert(tk.END,f"Playing audio {filename}...\n")
 			cls.container.audioReader.read_wav(f,True)
-class CoordinateSystem(tk.Frame):
+class CoordSystem(tk.Frame):
 	"""
 		Class that represents the c
 	"""
@@ -425,7 +457,7 @@ class CoordinateSystem(tk.Frame):
 
 	def plot(self):
 		self.ax.cla()
-		x1=self.mainContainer.variable.sensor1X.get() #x-coordinate of sensor 1
+		x1=self.mainContainer.variable.sensor1X.get() #x-coord of sensor 1
 		y1=self.mainContainer.variable.sensor1Y.get() #y-coordintae of sensor 2
 		x2=self.mainContainer.variable.sensor2X.get()
 		y2=self.mainContainer.variable.sensor2Y.get()
@@ -445,6 +477,11 @@ class CoordinateSystem(tk.Frame):
 		self.ax.annotate("sensor3",xy=(x3,y3))
 		self.ax.annotate("sensor4",xy=(x4,y4))
 		self.canvas.draw()
+	def plot_point(self,x,y,label,color):
+		self.ax.plot(x,y,color,markersize=5)
+		self.ax.annotate(label,xy=(x,y))
+		self.canvas.draw()
+
 
 	def clear(self):
 		self.ax.cla() #clear the plot
@@ -462,6 +499,8 @@ class Console(tk.Frame):
 		self.text=tk.Text(self,width="102",height="40")
 		self.__add_widgets()
 		self.text.insert(tk.END,"*****************Welcome to Acoustic Traiangulation System***************\n")
+		self.text.insert(tk.END,"Please Enter Coordinates in centimeters\n")
+
 		self.place(x=0,y=360)
 	def __add_widgets(self):
 		tk.Label(self,text="_______________________Console________________________",font=("Arial", 12),bg="white").pack(side=tk.TOP)
@@ -469,6 +508,7 @@ class Console(tk.Frame):
 	def reset(self):
 			self.text.delete("1.0",tk.END)
 			self.text.insert(tk.END,"*****************Welcome to Acoustic Traiangulation System****************\n")
+			self.text.insert(tk.END,"Please Enter Coordinates in centimeters\n")
 class ConsoleWritter:
 	"""
 		Class that tracks Errors within the program and display them on the console
@@ -494,22 +534,22 @@ class ConsoleWritter:
 			return False
 
 		if self.container.variable.sensor1X.get()==self.container.variable.sensor2X.get() and self.container.variable.sensor1Y.get()==self.container.variable.sensor2Y.get():
-			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 2 can not have similar coordinates!\n")
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 2 can not have similar coords!\n")
 			return False
 		elif self.container.variable.sensor1X.get()==self.container.variable.sensor3X.get() and self.container.variable.sensor1Y.get()==self.container.variable.sensor3Y.get():
-			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 3 can not have similar coordinates!\n")
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 3 can not have similar coords!\n")
 			return False
 		elif self.container.variable.sensor1X.get()==self.container.variable.sensor4X.get() and self.container.variable.sensor1Y.get()==self.container.variable.sensor4Y.get():
-			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 4 can not have similar coordinates!\n")
+			self.container.console.text.insert(tk.END,"Error: Sensor 1 and Sensor 4 can not have similar coords!\n")
 			return False
 		elif self.container.variable.sensor3X.get()==self.container.variable.sensor2X.get() and self.container.variable.sensor3Y.get()==self.container.variable.sensor2Y.get():
-			self.container.console.text.insert(tk.END,"Error: Sensor 2 and Sensor 3 can not have similar coordinates!\n")
+			self.container.console.text.insert(tk.END,"Error: Sensor 2 and Sensor 3 can not have similar coords!\n")
 			return False
 		elif self.container.variable.sensor4X.get()==self.container.variable.sensor2X.get() and self.container.variable.sensor4Y.get()==self.container.variable.sensor2Y.get():
-			self.container.console.text.insert(tk.END,"Error: Sensor 2 and Sensor 4 can not have similar coordinates!\n")
+			self.container.console.text.insert(tk.END,"Error: Sensor 2 and Sensor 4 can not have similar coords!\n")
 			return False
 		elif self.container.variable.sensor3X.get()==self.container.variable.sensor4X.get() and self.container.variable.sensor4Y.get()==self.container.variable.sensor3Y.get():
-			self.container.console.text.insert(tk.END,"Error: Sensor 3 and Sensor 4 can not have similar coordinates!\n")
+			self.container.console.text.insert(tk.END,"Error: Sensor 3 and Sensor 4 can not have similar coords!\n")
 			return False
 		elif self.container.variable.frequencyValue.get()<0:
 			self.container.console.text.insert(tk.END,"Error: Sampling Frequency can  not be negative!\n")
@@ -522,9 +562,6 @@ class Application(tk.Tk):
 	"""
 		A class	Represents the main Application
 	"""
-	
-
-
 
 	def __init__(self,width,height,title):
 		super().__init__()
@@ -546,7 +583,7 @@ class Application(tk.Tk):
 		self.control=ControlPanel(self,self.background) #Add control panel frame
 		self.console=Console(self,self.background) #add the console frame
 		self.signalPropertiesPanel=SignalPropertiesPanel(self,self.background) #add signal properties panel
-		self.coordinateSystem=CoordinateSystem(self,self.background) #Add coordinate System Frame
+		self.coordSystem=CoordSystem(self,self.background) #Add coord System Frame
 		self.writer=ConsoleWritter(self,self.console)
 		self.dis=Display(self)
 
