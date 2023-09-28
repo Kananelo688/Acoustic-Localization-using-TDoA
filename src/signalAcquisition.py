@@ -4,7 +4,7 @@ import paramiko
 import tkinter as tk
 
 
-def acquire(console,server_ip,username,password,remote_command,feedback=False):
+def acquire(console,server_ip,username,password,remote_command,verbose=False):
 
 # Create an SSH client instance
     ssh = paramiko.SSHClient()
@@ -20,14 +20,15 @@ def acquire(console,server_ip,username,password,remote_command,feedback=False):
     	
     	#Remote command to run python script
 
-    	console.text.insert(tk.END,"Runing command: {remote_command}...\n")
+    	console.text.insert(tk.END,f"Runing command: {remote_command}...\n")
 
     	#Execute the command on remove server
     	stdin,stdout,stderr=ssh.exec_command(remote_command)
 
     	ssh.close()		#Clone ssh command after
+        
     	console.text.insert(tk.END,"Connection closed.\n")
-    	if feedback:
+    	if verbose:
         
     		console.text.insert(tk.END,"stdin: {stdin}\nstdout:{stdout}\nstderr{stderr}\n")
 
@@ -60,11 +61,10 @@ def transfer_file(console,server_ip, username, password, remote_file_path, local
        	console.text.insert(tk.END,"Connection Closed.\n")
     except Exception as e:
     	#print(f'Error: {str(e)}\n')
-        console.text.intser(tk.END,f"An error occurred: {str(e)}\n")
+        console.text.insert(tk.END,f"An error occurred: {str(e)}\n")
 
 
 def main():
 	print("Tested!")
-	acquire("10.42.0.179","eee3097s","!@#$%^&*()1234567890","python3 /home/eee3097s/Documents/signalAcquisition.py")
 if __name__ == '__main__':
 	main()

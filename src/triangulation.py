@@ -7,7 +7,6 @@
 
 
 	Author: Kananelo Chabeli
-
 """
 
 
@@ -39,34 +38,38 @@ def matrices(sensors,tdoa,console=None):
 			matrix: Matrix M, in the equaion Mx=B
 			solution: The solution vector B
 	"""
-	if len(sensors)-1 !=len(tdoa):
-		console.text.insert(tk.End,"Error: missing Data.\n")
-	ref=sensors[0] #Get coordinates of the reference signal
-	matrix=np.ones((3,3))		#The expected  Matrix will be  3x3 ndarray object
-	solution=np.ones((3,1))	#The solution vector
+	try:
+		if len(sensors)-1 !=len(tdoa):
+			console.text.insert(tk.End,"An Error Occured: missing Data.\n")
+		ref=sensors[0] #Get coordinates of the reference signal
+		matrix=np.ones((3,3))		#The expected  Matrix will be  3x3 ndarray object
+		solution=np.ones((3,1))	#The solution vector
 
 	#Run nested for loop and hard code these matrices
-	for i in range(3):
-		for j in range(3):
-			if j==0:
-				matrix[i][j]=ref[0]-sensors[i+1][0]
-			elif j==1:
-				matrix[i][j]=ref[1]-sensors[1+i][1]
-			else:
-				matrix[i][j]=SPEED_OF_SOUND*tdoa[i]
+		for i in range(3):
+			for j in range(3):
+				if j==0:
+					matrix[i][j]=ref[0]-sensors[i+1][0]
+				elif j==1:
+					matrix[i][j]=ref[1]-sensors[1+i][1]
+				else:
+					matrix[i][j]=SPEED_OF_SOUND*tdoa[i]
 
-	b0=(mt.pow(ref[0],2)-mt.pow(sensors[1][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[1][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[0],2))
+		b0=(mt.pow(ref[0],2)-mt.pow(sensors[1][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[1][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[0],2))
 
-	b1=(mt.pow(ref[0],2)-mt.pow(sensors[2][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[2][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[1],2))
+		b1=(mt.pow(ref[0],2)-mt.pow(sensors[2][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[2][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[1],2))
 
-	b2=(mt.pow(ref[0],2)-mt.pow(sensors[3][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[3][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[2],2))
+		b2=(mt.pow(ref[0],2)-mt.pow(sensors[3][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[3][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[2],2))
 	
-	solution=0.5*np.array([b0,b1,b2])	
+		solution=0.5*np.array([b0,b1,b2])
+	except Exception as e:
+		console.text.insert(tk.END,f"An Error Occured: str(e)\n")	
 
 	#for i in range(3):
 	#	entry=(mt.pow(ref[0],2)-mt.pow(sensors[i+1][0],2))+(mt.pow(ref[1],2)-mt.pow(sensors[i+1][1],2))+(mt.pow(SPEED_OF_SOUND*tdoa[i],2))
 	#		solution[i][0]=entry
 	return matrix,solution
+
 def error(x,mat,sol,ref):
 	"""
 		This function defines and error vector fucntion is to be minimized by the optimization algorithm.
@@ -96,7 +99,7 @@ def compute(initial,matrix,solution,ref):
 	#bounds to independent variables
 	bnds=((0.0,0.8),(0.0,0.5),(0.0,0.943398))
 	res=op.minimize(
-		meansquares,
+		error,
 		initial,
 		args=(matrix,solution,ref),
 		method='L-BFGS-B',
@@ -219,18 +222,30 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 			tdoa=calc_tdoa(flight_times)
 			mat,sol=matrices(sensors,tdoa)#Compute Matrices
 			res=compute(initial,mat,sol,sensors[0])
-			console.text.insert(tk.END,'\n \t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~RESULTS~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n')
+			console.text.insert(tk.END,'\n--------------------------------RESULTS-------------------------------------\n')
 			console.text.insert(tk.END,f'Actual Target Location   :\t {target}\n')
 			console.text.insert(tk.END,f'Estimated Target Location:\t ({round(res.x[0],4)},{round(res.x[1],4)})\n')
 			console.text.insert(tk.END,f"Estimated Error		  :\t {round(res.fun,4)}\n")
+			console.text.insert(tk.END,'------------------------------------------------------------------------------\n')
 			coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
 			coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")
+			return 
 		#Write Code that uses actual tdoa data from this point
-		
+		tdoa=sp.getTDoA(variables.sensorSel.get(),console)
+		mat,sol=matrices(sensors,tdoa)#Compute Matrices
+		res=compute(initial,mat,sol,sensors[0])
+		console.text.insert(tk.END,'\n------------------------------------RESULTS------------------------------------\n')
+		console.text.insert(tk.END,f'Actual Target Location   :\t {target}\n')
+		console.text.insert(tk.END,f'Estimated Target Location:\t ({round(res.x[0],4)},{round(res.x[1],4)})\n')
+		console.text.insert(tk.END,f"Estimated Error		  :\t {round(res.fun,4)}\n")
+		coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
+		console.text.insert(tk.END,'---------------------------------------------------------------------------------\n')
+
+		coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")
 
 
 	except Exception as e:
-		console.text.insert(tk.END,F"Error: {str(e)}\n")
+		console.text.insert(tk.END,F"An Error Occured: {str(e)}\n")
 
 	#tdoa=sp.getTDoA(console,reference=1) #This function will be invoked to calculater
 

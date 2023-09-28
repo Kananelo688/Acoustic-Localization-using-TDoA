@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 """
 	
 	This module defines classes that are responsible for handling graphical user interfaces of the project.
@@ -378,7 +379,7 @@ class EventHandler:
 
 		if cls.startPressed:
 			#Copy Files from the remote Server
-			sa.transfer_file(cls.container.console,"10.42.0.179","eee3097s","!@#$%^&*()1234567890","/home/eee3097s/Documents/text.txt",'/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/file.txt')
+			sa.transfer_file(cls.container.console,"192.168.43.159","eee3097s","123456789","/home/eee3097s/Documents/data/hello.txt",'/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/fromPi.txt')
 			cls.startPressed=False
 			cls.container.variable.startButton.set("Start Acquisition")
 
@@ -386,7 +387,7 @@ class EventHandler:
 			
 			if not cls.container.writer.inputValidate():
 				return None
-			sa.acquire(cls.container.console,"10.42.0.179","eee3097s","!@#$%^&*()1234567890","python3 /home/eee3097s/Documents/signalAcquisition.py")
+			sa.acquire(cls.container.console,"192.168.43.159","eee3097s","123456789","python3 /home/test.py")
 			cls.container.variable.startButton.set("Stop Acquisition")
 			cls.startPressed=True
 			
@@ -410,11 +411,7 @@ class EventHandler:
 		#invoke function that clears the target plot
 	@classmethod
 	def playButtonAction(cls):
-		cls.directory = '/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/'
-		for filename in os.listdir(cls.directory):
-			f=os.path.join(cls.directory,filename)
-			cls.container.console.text.insert(tk.END,f"Playing audio {filename}...\n")
-			cls.container.audioReader.read_wav(f,True)
+		pass
 class CoordSystem(tk.Frame):
 	"""
 		Class that represents the c
@@ -498,7 +495,7 @@ class Console(tk.Frame):
 		self.mainContainer=mainContainer
 		self.text=tk.Text(self,width="102",height="40")
 		self.__add_widgets()
-		self.text.insert(tk.END,"*****************Welcome to Acoustic Traiangulation System***************\n")
+		self.text.insert(tk.END,"-----------------------Welcome to Acoustic Traiangulation System-----------------------\n")
 		self.text.insert(tk.END,"Please Enter Coordinates in centimeters\n")
 
 		self.place(x=0,y=360)
@@ -507,7 +504,7 @@ class Console(tk.Frame):
 		self.text.pack(anchor=tk.CENTER)
 	def reset(self):
 			self.text.delete("1.0",tk.END)
-			self.text.insert(tk.END,"*****************Welcome to Acoustic Traiangulation System****************\n")
+			self.text.insert(tk.END,"---------------------Welcome to Acoustic Traiangulation System---------------------\n")
 			self.text.insert(tk.END,"Please Enter Coordinates in centimeters\n")
 class ConsoleWritter:
 	"""
@@ -572,10 +569,6 @@ class Application(tk.Tk):
 		self.variable=Variables(self) #Creat isntance of tk Varaibles
 		self.__add_widgets()
 		#Object that will read audio data when button pressed
-		self.audioReader=sp.AudioReader(self.console)
-		#Object that wil be used to calculate TDoA
-		self.tdoaEstimator=sp.TDoA_Estimator(self.console)
-		#Instantiate the background frame object 
 		
 	def __add_widgets(self):
 		self.background=BackgroundFrame(self)
