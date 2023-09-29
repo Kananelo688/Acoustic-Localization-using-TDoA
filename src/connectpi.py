@@ -11,10 +11,10 @@ import soundfile as sf
 
 #Define SSH record command for each Raspberry Pi 
 def pi1():
-    os.system("ssh pi1@192.168.137.138 sudo nice -n -20 arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v signal1.wav")
+    os.system("ssh eee3097s@192.168.137.138 sudo nice -n -20 arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v signal1.wav")
     
 def pi2():
-    os.system("ssh pi2@192.168.137.107 sudo nice -n -20 arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v signal2.wav")
+    os.system("ssh eee3097s@192.168.137.107 sudo nice -n -20 arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v signal2.wav")
     
     
 if __name__ == '__main__':
@@ -44,8 +44,8 @@ if __name__ == '__main__':
    
 
     #Collect recordings from Raspberry Pis
-    os.system("scp pi1@192.168.137.240:signal1.wav "+file)
-    os.system("scp pi2@192.168.137.71:signal2.wav "+file)
+    os.system("scp eee3097s@192.168.137.240:signal1.wav "+file)
+    os.system("scp eee3097s@192.168.137.71:signal2.wav "+file)
     
     
     exit
