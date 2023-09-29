@@ -7,14 +7,14 @@ import sys
 import sounddevice as sd
 import soundfile as sf
 
-#arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v file_stereo.wav
+
 
 #Define SSH record command for each Raspberry Pi 
 def pi1():
-    os.system("ssh pi1@192.168.137.240 sudo nice -n -20 arecord  -f S16_LE -r 48000 -d 20 -c 1 -D plughw:1 pi1.wav")
+    os.system("ssh pi1@192.168.137.138 sudo nice -n -20 arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v signal1.wav")
     
 def pi2():
-    os.system("ssh pi2@192.168.137.71 sudo nice -n -20 arecord  -f S16_LE -r 48000 -d 20 -c 1 -D plughw:1 pi2.wav")
+    os.system("ssh pi2@192.168.137.107 sudo nice -n -20 arecord -D plughw:0 -c2 -r 48000 -f S32_LE -t wav -V stereo -v signal2.wav")
     
     
 if __name__ == '__main__':
@@ -34,20 +34,19 @@ if __name__ == '__main__':
     sleep(5)                                           #Wait 5 seconds
     
     #Read in calibration signal
-    filename = 'chirp_0_15000_5s.wav' 
+    #filename = 'chirp_0_15000_5s.wav' 
 
-    data, fs = sf.read(filename, dtype='float32')      # Extract data and sampling rate from file
-    sd.play(data, fs)                                  # Play calibration signal
-    status = sd.wait()                                 # Wait until file is done playing
+    #data, fs = sf.read(filename, dtype='float32')      # Extract data and sampling rate from file
+    #sd.play(data, fs)                                  # Play calibration signal
+    #status = sd.wait()                                 # Wait until file is done playing
     
     sleep(15)                                          #Wait until recordings fininsh
    
 
     #Collect recordings from Raspberry Pis
-    os.system("scp pi1@192.168.137.240:pi1.wav "+file)
-    os.system("scp pi2@192.168.137.71:pi2.wav "+file)
-    os.system("scp pi3@192.168.137.198:pi3.wav "+file)
-    os.system("scp pi4@192.168.137.103:pi4.wav "+file)
+    os.system("scp pi1@192.168.137.240:signal1.wav "+file)
+    os.system("scp pi2@192.168.137.71:signal2.wav "+file)
+    
     
     exit
 exit
