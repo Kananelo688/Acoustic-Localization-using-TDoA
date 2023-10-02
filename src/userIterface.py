@@ -379,7 +379,7 @@ class EventHandler:
 
 		if cls.startPressed:
 			#Copy Files from the remote Server
-			sa.transfer_file(cls.container.console,"192.168.43.159","eee3097s","123456789","/home/eee3097s/Documents/data/hello.txt",'/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/fromPi.txt')
+			sa.transfer_file(cls.container.console,'192.168.137.138','eee3097s','123456789','/home/eee3097s/file_stereo.wav','/home/chabeli/Downloads/out.wav')
 			cls.startPressed=False
 			cls.container.variable.startButton.set("Start Acquisition")
 
@@ -387,7 +387,7 @@ class EventHandler:
 			
 			if not cls.container.writer.inputValidate():
 				return None
-			sa.acquire(cls.container.console,"192.168.43.159","eee3097s","123456789","python3 /home/test.py")
+			sa.acquire(cls.container.console,"192.168.137.138","eee3097s","123456789","python3 /home/eee3097s/test.py")
 			cls.container.variable.startButton.set("Stop Acquisition")
 			cls.startPressed=True
 			

@@ -6,6 +6,12 @@ import tkinter as tk
 
 def acquire(console,server_ip,username,password,remote_command,verbose=False):
 
+    """
+        Funtion that creates shh client and runs command on the remote machine
+
+    """
+
+
 # Create an SSH client instance
     ssh = paramiko.SSHClient()
 
@@ -13,9 +19,11 @@ def acquire(console,server_ip,username,password,remote_command,verbose=False):
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
     try:
+        console.text.insert(tk.END,f"Connecting to {username}@{server_ip}...\n")
+
     # Connect to the SSH server
-    	console.text.insert(tk.END,f"Connecting to {username}@{server_ip}...\n")
     	ssh.connect(server_ip,username=username,password=password)
+
     	console.text.insert(tk.END,"Connection successfully established.\n")
     	
     	#Remote command to run python script
@@ -26,7 +34,7 @@ def acquire(console,server_ip,username,password,remote_command,verbose=False):
     	stdin,stdout,stderr=ssh.exec_command(remote_command)
 
     	ssh.close()		#Clone ssh command after
-        
+
     	console.text.insert(tk.END,"Connection closed.\n")
     	if verbose:
         
@@ -62,7 +70,6 @@ def transfer_file(console,server_ip, username, password, remote_file_path, local
     except Exception as e:
     	#print(f'Error: {str(e)}\n')
         console.text.insert(tk.END,f"An error occurred: {str(e)}\n")
-
 
 def main():
 	print("Tested!")
