@@ -382,14 +382,32 @@ class EventHandler:
 			if cls.startPressed:
 				#sa.transfer_file(cls.container.console,'192.168.137.138','eee3097s','123456789','/home/eee3097s/file_stereo.wav','/home/chabeli/Downloads/out.wav')
 				cls.startPressed=False
+				thread1=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.196","eee3097s","123456789","python3 /home/eee3097s/stop.py"))
+				thread2=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.45","eee3097s","123456789","python3 /home/eee3097s/stop.py"))
+
+				thread1.start()
+				thread2.start()
+
+				remote_path1='/home/eee3097s/pi1wav'
+				local_path1='/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi1wav'
+				local_path2='/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi2wav'
+
+				thread3=threading.Thread(target=sa.getData,args=(cls.container.console,"192.168.137.196","eee3097s","123456789",remote_path1,local_path1))
+				remote_path2='/home/eee3097s/pi2wav'
+				thread4=threading.Thread(target=sa.getData,args=(cls.container.console,"192.168.137.45","eee3097s","123456789",remote_path2,local_path2))
+
+				thread3.start()
+				thread4.start()
+
+				tr.executer(cls.container.variable,cls.container.console,cls.container.coordSystem,useTestData=False,verbose=True)
 				cls.container.variable.startButton.set("Start Acquisition")
 			else:
 				if not cls.container.writer.inputValidate():
 					return None
 				cls.container.coordSystem.plot()
 
-				thread1=threading.Thread(target=sa.pi1,args=("192.168.137.138",cls.container.console))
-				thread2=threading.Thread(target=sa.pi1,args=("192.168.137.107",cls.container.console))
+				thread1=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.196","eee3097s","123456789","python3 /home/eee3097s/start.py"))
+				thread2=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.45","eee3097s","123456789","python3 /home/eee3097s/start.py"))
 
 				thread1.start()
 				thread2.start()
@@ -398,7 +416,7 @@ class EventHandler:
 				cls.startPressed=True
 
 		except Exception as e:
-			cls.container.console.text.insert(tk.END,f"Error Occured: {str(e)}")
+			cls.container.console.text.insert(tk.END,f"Error occured: {str(e)}")
 			
 	@classmethod
 	def plotButtonAction(cls):

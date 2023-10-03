@@ -39,8 +39,8 @@ def matrices(sensors,tdoa,console=None):
 			solution: The solution vector B
 	"""
 	try:
-		if len(sensors)-1 !=len(tdoa):
-			console.text.insert(tk.End,"An Error Occured: missing Data.\n")
+		if len(sensors)-1 !=len(tdoa) and console is not None:
+			console.text.insert(tk.End,"Error Occured: missing Data.\n")
 		ref=sensors[0] #Get coordinates of the reference signal
 		matrix=np.ones((3,3))		#The expected  Matrix will be  3x3 ndarray object
 		solution=np.ones((3,1))	#The solution vector
@@ -212,11 +212,12 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 			sensors=np.array([(sensor4X,sensor4Y),(sensor2X,sensor2Y),(sensor3X,sensor3Y),(sensor1X,sensor1Y)])
 			
 		initial=np.array([initialX,initialY,distance((initialX,initialY),sensors[0])])
+		target=(actualX,actualY)
+
 
 		if useTestData:
 			if verbose:
 				console.text.insert(tk.END,"Multilatering with synthesized data...\n")
-			target=(actualX,actualY)
 			dist=distances(sensors,target)
 			flight_times=time(dist)
 			tdoa=calc_tdoa(flight_times)
@@ -231,21 +232,24 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 			coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")
 			return 
 		#Write Code that uses actual tdoa data from this point
-		tdoa=sp.getTDoA(variables.sensorSel.get(),console)
+		
+		tdoa=sp.getTdoA(console,verbose)
+		if verbose:
+			console.text.insert(tk.END,"Multilatering using Optimization algorithm....\n")
 		mat,sol=matrices(sensors,tdoa)#Compute Matrices
 		res=compute(initial,mat,sol,sensors[0])
 		console.text.insert(tk.END,'\n------------------------------------RESULTS------------------------------------\n')
 		console.text.insert(tk.END,f'Actual Target Location   :\t {target}\n')
 		console.text.insert(tk.END,f'Estimated Target Location:\t ({round(res.x[0],4)},{round(res.x[1],4)})\n')
 		console.text.insert(tk.END,f"Estimated Error		  :\t {round(res.fun,4)}\n")
-		coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
 		console.text.insert(tk.END,'---------------------------------------------------------------------------------\n')
 
 		coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")
+		coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
 
 
 	except Exception as e:
-		console.text.insert(tk.END,F"An Error Occured: {str(e)}\n")
+		console.text.insert(tk.END,F"Error Occured: {str(e)}\n")
 
 	#tdoa=sp.getTDoA(console,reference=1) #This function will be invoked to calculater
 

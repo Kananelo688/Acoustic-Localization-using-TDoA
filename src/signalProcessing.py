@@ -23,7 +23,7 @@ def read_wav(filename,play=False,console=None):
 			sd.play(data,rate)
 		return data,rate
 	except Exception as e:
-		console.text.insert(tk.END,f"An Error Occured: {str(e)}\n")
+		console.text.insert(tk.END,f"Error Occured: {str(e)}\n")
 def record_wav(filename,duration,sampling_rate,channels=1,console=None):
 
 	recording=sd.rec(int(duration*sampling_rate),samplerate=sampling_rate,channels=channels)
@@ -39,7 +39,7 @@ def audio_delay(data,rate,delay,filename=None,write=False,console=None):
 
 		return ret
 	except Exception as e:
-		console.text.insert(tk.END,f"An Error Occured: {str(e)}\n")
+		console.text.insert(tk.END,f"Error Occured: {str(e)}\n")
 def gcc_phat(ref_signal,signal,rate,interp=16,console=None):
 	
 	try:
@@ -53,51 +53,38 @@ def gcc_phat(ref_signal,signal,rate,interp=16,console=None):
 		shift=np.argmax(np.abs(cross_Corr))-max_shift
 		delay=shift/float(interp*rate)
 	except Exception as e:
-		console.text.insert(tk.END,f"An Error Occured: {str(e)}\n")
+		console.text.insert(tk.END,f"Error Occured: {str(e)}\n")
 
-	return delay,cross_Corr
+	return delay
 def main():
-	data1,rate=read_wav("ref_signal.wav")
-	data2,rate=read_wav("1sec_delayed.wav")
-	delay,cc=gcc_phat(data2,data1,rate)
-	print(f'Estiated delay is {delay} second')
-def getTdoA(ref,console=None):
+	print(getTdoA())
+	print("compiled_correctly!")
+def getTdoA(console=None,verbose=False):
 	"""
 		This function read the wave files, and computes the time delays with mic choosen as reference
-
-		Parameters:
-			ref(str): 	A string stating which microphone is to be taken as reference.
-
 	"""
 	try:
-		if ref=='sensor1':
-			ref,rate=read_wav("sensor1.wav")#Read the sensor data that's reference
-			data1,rate=read_wav("sensor2.wav")
-			data2,rate=read_wav("sensor3.wav")
-			data3,rate=read_wav("sensor4.wav")
-		elif ref=='sensor2':
-			ref,rate=read_wav("sensor2.wav")#Read the sensor data that's reference
-			data1,rate=read_wav("sensor1.wav")
-			data2,rate=read_wav("sensor2.wav")
-			data3,rate=read_wav("sensor4.wav")
-		elif ref=='sensor3':
-			ref,rate=read_wav("sensor3.wav")#Read the sensor data that's reference
-			data1,rate=read_wav("sensor1.wav")
-			data2,rate=read_wav("sensor2.wav")
-			data3,rate=read_wav("sensor4.wav")
-		elif ref=='sensor4':
-			ref,rate=read_wav("sensor4.wav")#Read the sensor data that's reference
-			data1,rate=read_wav("sensor1.wav")
-			data2,rate=read_wav("sensor2.wav")
-			data3,rate=read_wav("sensor3.wav")
-		d0=gcc_phat(ref,data1,rate)[0] #Compute first time tdelay
-		d1=gcc_phat(ref,data2,rate)[0] #Compute first time tdelay
-		d2=gcc_phat(ref,data3,rate)[0] #Compute first time tdelay
-		tdoa=np.array([d0,d1,d2])
-		return tdoa
+		if verbose and console is not None:
+			console.text.insert(tk.END,"Processing signals....\n")
+		pi1_data,rat2=read_wav("/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi1.wav")
+		pi2_data,rate1=read_wav("/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi2.wav")
+		pi1_channel1,pi1_channel2=pi1_data[:,0],pi1_data[:,1]
+		pi2_channel1,pi2_channel2=pi2_data[:,0],pi2_data[:,1]
 
+		#--------------------------------------------------#
+		#Calclulating Time difference of Arrivals 		   #
+		#--------------------------------------------------#
+		tdoa0=gcc_phat(pi2_channel1,pi1_channel2,rate1)
+		tdoa1=gcc_phat(pi2_channel1,pi2_channel1,rate1)
+		tdoa2=gcc_phat(pi2_channel1,pi2_channel2,rate1)
+		if verbose:
+			console.text.insert(tk.END,"Done.\n")
+
+		return np.array([tdoa0,tdoa1,tdoa2])
+
+		
 	except Exception as e:
-		console.text.insert(f"An Error Occured:{str(e)}\n")
+		console.text.insert(f"Error Occured:{str(e)}\n")
 
 
 if __name__ == '__main__':
