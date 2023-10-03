@@ -377,26 +377,37 @@ class EventHandler:
 	@classmethod
 	def startButton(cls):
 
-		if cls.startPressed:
-			#Copy Files from the remote Server
-			sa.transfer_file(cls.container.console,'192.168.137.138','eee3097s','123456789','/home/eee3097s/file_stereo.wav','/home/chabeli/Downloads/out.wav')
-			cls.startPressed=False
-			cls.container.variable.startButton.set("Start Acquisition")
 
-		else:
-			
-			if not cls.container.writer.inputValidate():
-				return None
-			sa.acquire(cls.container.console,"192.168.137.138","eee3097s","123456789","python3 /home/eee3097s/test.py")
-			cls.container.variable.startButton.set("Stop Acquisition")
-			cls.startPressed=True
-			
+		try:
+			if cls.startPressed:
+				#sa.transfer_file(cls.container.console,'192.168.137.138','eee3097s','123456789','/home/eee3097s/file_stereo.wav','/home/chabeli/Downloads/out.wav')
+				cls.startPressed=False
+				cls.container.variable.startButton.set("Start Acquisition")
+			else:
+				if not cls.container.writer.inputValidate():
+					return None
+				cls.container.coordSystem.plot()
 
+				thread1=threading.Thread(target=sa.pi1,args=("192.168.137.138",cls.container.console))
+				thread2=threading.Thread(target=sa.pi1,args=("192.168.137.107",cls.container.console))
+
+				thread1.start()
+				thread2.start()
+
+				cls.container.variable.startButton.set("Stop Acquisition")
+				cls.startPressed=True
+
+		except Exception as e:
+			cls.container.console.text.insert(tk.END,f"Error Occured: {str(e)}")
+			
 	@classmethod
 	def plotButtonAction(cls):
+		"""
+			Function that solely plots the target
+		"""
 		VALIDATION=cls.container.writer.inputValidate()
 		if VALIDATION:
-			cls.container.coordSystem.plot()#Plot Sensors
+			
 			tr.executer(cls.container.variable,cls.container.console,cls.container.coordSystem)#Plot target
 		return None #Else return from the plot
 	@classmethod
