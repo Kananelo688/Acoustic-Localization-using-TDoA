@@ -176,8 +176,7 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 	#Get sensor coordinates(convert coordinates to m)
 	reference=0
 	try:
-		if(verbose):
-			console.text.insert(tk.END,"Reading microphone coordinates coordiates...\n")
+		console.text.insert(tk.END,"Reading microphone coordinates coordiates...\n")
 		sensor1X=variables.sensor1X.get()/100 #Must be set, not default values will be used
 		sensor1Y=variables.sensor1Y.get()/100 
 		sensor2X=variables.sensor2X.get()/100 
@@ -238,10 +237,15 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 			console.text.insert(tk.END,"Multilatering using Optimization algorithm....\n")
 		mat,sol=matrices(sensors,tdoa)#Compute Matrices
 		res=compute(initial,mat,sol,sensors[0])
+		variables.estimatedLoc_x=round(res.x[0],5)
+		variables.estimatedLoc_y=round(res.x[1],5)
+
 		console.text.insert(tk.END,'\n------------------------------------RESULTS------------------------------------\n')
+		console.text.insert(tk.END,f'TDOA Estimations:\n \tDelay0: {tdoa[0]} sec\n \tDelay1: {tdoa[1]} sec\n \tDelay2: {tdoa[2]}\n')
 		console.text.insert(tk.END,f'Actual Target Location   :\t {target}\n')
-		console.text.insert(tk.END,f'Estimated Target Location:\t ({round(res.x[0],4)},{round(res.x[1],4)})\n')
-		console.text.insert(tk.END,f"Estimated Error		  :\t {round(res.fun,4)}\n")
+		console.text.insert(tk.END,f'Estimated Target Location:\t ({variables.estimatedLoc_x},{variables.estimatedLoc_y})\n')
+		error=distance((res.x[0],res.x[1]),target)
+		console.text.insert(tk.END,f"Estimated Error		  :\t {np.abs(round(error,4))}m\n")
 		console.text.insert(tk.END,'---------------------------------------------------------------------------------\n')
 
 		coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")

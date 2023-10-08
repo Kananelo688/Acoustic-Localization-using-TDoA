@@ -53,6 +53,8 @@ class Variables:
 		#sensor 1 will be used checked by default
 		self.sensorSel=tk.StringVar(self.container, value="sensor1") 
 
+		self.estimatedLoc_x=tk.IntVar(self.container,value=0)
+		self.estimatedLoc_y=tk.IntVar(self.container,value=0)
 
 		#Variables to get sensor data from the user
 
@@ -167,7 +169,7 @@ class ControlPanel(tk.Frame):
 		self.startB.grid(row=0,column=1)
 
 		#plot button
-		self.plotB=tk.Button(self.placeHolder2,text="  Plot  ",bd=5,command=EventHandler.plotButtonAction,
+		self.plotB=tk.Button(self.placeHolder2,text="  Data ",bd=5,command=EventHandler.plotButtonAction,
 			activebackground="#FD349C")
 		self.plotB.grid(row=0,column=0)
 
@@ -178,7 +180,7 @@ class ControlPanel(tk.Frame):
 		#quit button
 		self.quitB=tk.Button(self.placeHolder2,text="Exit",bd=5,command=EventHandler.quitButtonAction,activebackground="#FD349C")
 		self.quitB.grid(row=0,column=3)
-		tk.Button(self.placeHolder2,text="Play",bd=5,activebackground="#FD349C",command=EventHandler.playButtonAction).grid(row=1,column=3)
+		tk.Button(self.placeHolder2,text="Plot",bd=5,activebackground="#FD349C",command=EventHandler.playButtonAction).grid(row=1,column=3)
 		#reset button
 		self.resetB=tk.Button(self.placeHolder2, text="          Reset        ",bd=5,command=EventHandler.resetButtonAction,activebackground="#FD349C")
 		self.resetB.grid(row=1, column=1)
@@ -360,6 +362,8 @@ class EventHandler:
 	All of the methods defines are class methods.
 	"""	
 	startPressed=False #Class variable that decides if the start method has been pressed or not
+	flag1=False
+	flag2=False
 	
 	def __init__(self):
 		pass
@@ -376,41 +380,25 @@ class EventHandler:
 
 	@classmethod
 	def startButton(cls):
-
-
 		try:
 			if cls.startPressed:
-				#sa.transfer_file(cls.container.console,'192.168.137.138','eee3097s','123456789','/home/eee3097s/file_stereo.wav','/home/chabeli/Downloads/out.wav')
 				cls.startPressed=False
-				thread1=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.196","eee3097s","123456789","python3 /home/eee3097s/stop.py"))
-				thread2=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.45","eee3097s","123456789","python3 /home/eee3097s/stop.py"))
+				stop1=threading.Thread(target=sa.reboot,args=(cls.container.console,"10.42.0.179",'eee3097s','123456789',1,cls))
+				stop2=threading.Thread(target=sa.reboot,args=(cls.container.console,"10.42.0.64",'eee3097s','123456789',2,cls))
 
-				thread1.start()
-				thread2.start()
+				stop1.start()
+				stop2.start()
 
-				remote_path1='/home/eee3097s/pi1wav'
-				local_path1='/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi1wav'
-				local_path2='/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi2wav'
-
-				thread3=threading.Thread(target=sa.getData,args=(cls.container.console,"192.168.137.196","eee3097s","123456789",remote_path1,local_path1))
-				remote_path2='/home/eee3097s/pi2wav'
-				thread4=threading.Thread(target=sa.getData,args=(cls.container.console,"192.168.137.45","eee3097s","123456789",remote_path2,local_path2))
-
-				thread3.start()
-				thread4.start()
-
-				tr.executer(cls.container.variable,cls.container.console,cls.container.coordSystem,useTestData=False,verbose=True)
 				cls.container.variable.startButton.set("Start Acquisition")
 			else:
 				if not cls.container.writer.inputValidate():
 					return None
 				cls.container.coordSystem.plot()
+				thread1=threading.Thread(target=sa.start,args=(cls.container.console,"10.42.0.179",'eee3097s','123456789'))
+				thread2=threading.Thread(target=sa.start,args=(cls.container.console,"10.42.0.64",'eee3097s','123456789'))
 
-				thread1=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.196","eee3097s","123456789","python3 /home/eee3097s/start.py"))
-				thread2=threading.Thread(target=sa.acquire,args=(cls.container.console,"192.168.137.45","eee3097s","123456789","python3 /home/eee3097s/start.py"))
-
-				thread1.start()
 				thread2.start()
+				thread1.start()
 
 				cls.container.variable.startButton.set("Stop Acquisition")
 				cls.startPressed=True
@@ -420,27 +408,42 @@ class EventHandler:
 			
 	@classmethod
 	def plotButtonAction(cls):
-		"""
-			Function that solely plots the target
-		"""
-		VALIDATION=cls.container.writer.inputValidate()
-		if VALIDATION:
-			
-			tr.executer(cls.container.variable,cls.container.console,cls.container.coordSystem)#Plot target
-		return None #Else return from the plot
+		file1=threading.Thread(target=sa.getData,args=(cls.container.console,"10.42.0.179",'eee3097s','123456789','/home/eee3097s/pi1.wav','/home/chabeli/pi1.wav'))
+		file2=threading.Thread(target=sa.getData,args=(cls.container.console,"10.42.0.64",'eee3097s','123456789','/home/eee3097s/pi2.wav','/home/chabeli/pi2.wav'))
+
+		file2.start()
+		file1.start()
 	@classmethod
 	def clearButtonAction(cls):
 		cls.container.console.reset()
 	@classmethod
 	def resetButtonAction(cls):
-		cls.startPressed=False 
-		cls.container.variable.reset()
-		cls.container.console.reset()
-		cls.container.coordSystem.clear()
+		try:
+			cls.startPressed=False 
+			cls.container.variable.reset()
+			cls.container.console.reset()
+			cls.container.coordSystem.clear()
+			if os.path.exists("/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi1.wav"):
+				os.system("rm /home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi1.wav")
+			elif os.path.exists("/home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi2.wav"):
+				os.system("rm /home/chabeli/Documents/Acoustic-Localization-using-TDoA/Data/pi2.wav")
+		except Exception as e:
+			cls.container.console.text.insert(tk.END,f'Error: {str(e)}.\n')
 		#invoke function that clears the target plot
 	@classmethod
 	def playButtonAction(cls):
-		pass
+		try:
+			tr.executer(cls.container.variable,cls.container.console,cls.container.coordSystem,useTestData=False,verbose=True)
+
+			#if os.path.exists('/home/chabeli/pi1.wav'):
+			#	cls.container.console.text.insert(tk.END,"Playing audio pi1.wav...\n")
+			#	sp.play('/home/chabeli/pi1.wav',cls.container.console)
+			#elif os.path.exists('/home/chabeli/pi2.wav'):
+			##	sp.play('/home/chabeli/pi2.wav',cls.container.console)
+			##	cls.container.console.text.insert(tk.END,"Sorry! there are not recordings to play yet.\n")
+		except Exception as e:
+			cls.container.console.text.insert(tk.END,f"Error: {str(e)}.\n")
+
 class CoordSystem(tk.Frame):
 	"""
 		Class that represents the c
