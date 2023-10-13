@@ -160,7 +160,7 @@ def main():
 	#print(f'Matrices used:\n {mat}\n\n {sol}\n')
 	print(f'Solution that gives the approximation: {res.x}')
 
-def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
+def executer(variables,console,coordinateSystem,verbose=False,useTestData=True,filter=False):
 	"""
 		Function that reads the sensor coordinates, and invokes  function that computes TDoA data
 
@@ -229,9 +229,36 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 			console.text.insert(tk.END,'------------------------------------------------------------------------------\n')
 			coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
 			coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")
+			coordinateSystem.plot()
+
 			return 
 		#Write Code that uses actual tdoa data from this point
-		
+		if filter:
+			tdoa=sp.getTdoA(console,verbose,filter)
+			mat,sol=matrices(sensors,tdoa[0])#Compute Matrices
+			res=compute(initial,mat,sol,sensors[0])
+			variables.estimatedLoc_x=round(res.x[0],5)
+			variables.estimatedLoc_y=round(res.x[1],5)
+
+			mat,sol=matrices(sensors,tdoa[1])#Compute Matrices
+			res=compute(initial,mat,sol,sensors[0])
+			variables.estimatedLocf_x=round(res.x[0],5)
+			variables.estimatedLocf_y=round(res.x[1],5)
+			
+			console.text.insert(tk.END,'\n------------------------------------RESULTS------------------------------------\n')
+
+			console.text.insert(tk.END,sp.description)
+			console.text.insert(tk.END,"\n----------------------------Estimated Target Coordinates-----------------------\n")
+			console.text.insert(tk.END,"\t\t     With no filter:\t\t with bandpass filter:\n")
+			console.text.insert(tk.END,f"Actual Coords:\t\t{target}\t\t\t {target}\n")
+			console.text.insert(tk.END,f"Estimated Coords:\t\t({variables.estimatedLoc_x},{variables.estimatedLoc_y}\t\t\t   ({variables.estimatedLocf_x},{variables.estimatedLocf_y})\n")
+
+			coordinateSystem.plot_point(variables.estimatedLoc_x*100,variables.estimatedLoc_y*100,label="Est.",color="go")
+			coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
+
+			coordinateSystem.plot_point(variables.estimatedLocf_x*100,variables.estimatedLocf_y*100,label="Est(f).",color="ko")
+			return
+
 		tdoa=sp.getTdoA(console,verbose)
 		if verbose:
 			console.text.insert(tk.END,"Multilatering using Optimization algorithm....\n")
@@ -239,6 +266,8 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 		res=compute(initial,mat,sol,sensors[0])
 		variables.estimatedLoc_x=round(res.x[0],5)
 		variables.estimatedLoc_y=round(res.x[1],5)
+
+
 
 		console.text.insert(tk.END,'\n------------------------------------RESULTS------------------------------------\n')
 		console.text.insert(tk.END,f'TDOA Estimations:\n \tDelay0: {tdoa[0]} sec\n \tDelay1: {tdoa[1]} sec\n \tDelay2: {tdoa[2]}\n')
@@ -248,12 +277,12 @@ def executer(variables,console,coordinateSystem,verbose=False,useTestData=True):
 		console.text.insert(tk.END,f"Estimated Error		  :\t {np.abs(round(error,4))}m\n")
 		console.text.insert(tk.END,'---------------------------------------------------------------------------------\n')
 
-		coordinateSystem.plot_point(round(res.x[0],3)*100,round(res.x[1],3)*100,label="Estimated",color="go")
+		coordinateSystem.plot_point(variables.estimatedLoc_x*100,variables.estimatedLoc_y*100,label="Est.",color="go")
 		coordinateSystem.plot_point(actualX*100,actualY*100,label="Actual",color="ro")
 
 
 	except Exception as e:
-		console.text.insert(tk.END,F"Error Occured: {str(e)}\n")
+		console.text.insert(tk.END,F"Error Occured in getTdoA: {str(e)}\n")
 
 	#tdoa=sp.getTDoA(console,reference=1) #This function will be invoked to calculater
 

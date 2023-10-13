@@ -56,6 +56,10 @@ class Variables:
 		self.estimatedLoc_x=tk.IntVar(self.container,value=0)
 		self.estimatedLoc_y=tk.IntVar(self.container,value=0)
 
+		self.estimatedLocf_x=tk.IntVar(self.container,value=0)
+		self.estimatedLocf_y=tk.IntVar(self.container,value=0)
+
+
 		#Variables to get sensor data from the user
 
 		#Initial Target Location for Optimization Algorithm

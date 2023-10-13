@@ -15,10 +15,10 @@ from scipy import *
 import matplotlib.pyplot as plt
 import numpy as np
 import tkinter as tk #For  using tk.inter fucntions
+from math import *
 
 
-
-description='-----------------Time Delay Estimations---------------\n\tWith no filter:\t\t with bandpass filter:\n'
+description='-----------------Time Delay Estimations---------------\n\t     With no filter:\t with bandpass filter:\n'
 
 def read_wav(filename,play=False,console=None):
 	try:
@@ -82,13 +82,16 @@ def filter(taps,cut_off,rate,plot=False,pass_zero=True):
         plt.show()
     return h
 
-def getTdoA(console=None,verbose=False,filt=True):
+def getTdoA(console=None,verbose=False,filt=False):
 	"""
 		This function read the wave files, and computes the time delays with mic choosen as reference
 	"""
 	#try:
 	#	if verbose and console is not None:
 	#		console.text.insert(tk.END,"Processing signals....\n")
+
+	global description
+
 	pi1_data,rate2=read_wav("/home/chabeli/pi1.wav")
 	pi2_data,rate1=read_wav("/home/chabeli/pi2.wav")
 	pi1_channel1,pi1_channel2=pi1_data[:,0],pi1_data[:,1]
@@ -97,9 +100,9 @@ def getTdoA(console=None,verbose=False,filt=True):
 		#--------------------------------------------------#
 		#Calclulating Time difference of Arrivals 		   #
 		#--------------------------------------------------#
-	tdoa0=gcc_phat(pi1_channel1,pi1_channel2,rate1)
-	tdoa1=gcc_phat(pi1_channel1,pi2_channel1,rate1)
-	tdoa2=gcc_phat(pi1_channel1,pi2_channel2,rate1)
+	tdoa0=gcc_phat(pi1_channel1[:200000],pi1_channel2[:200000],rate1)
+	tdoa1=gcc_phat(pi1_channel1[:200000],pi2_channel1[:200000],rate1)
+	tdoa2=gcc_phat(pi1_channel1[:200000],pi2_channel2[:200000],rate1)
 		#Computer time delay extimations with filtered signals
 
 	if filt:
@@ -112,14 +115,14 @@ def getTdoA(console=None,verbose=False,filt=True):
 		pi2_channel1=signal.convolve(h,pi2_channel1)
 
 			#Find time delays
-		tdoa0_1=gcc_phat(pi1_channel1,pi1_channel2,rate1)
-		tdoa1_1=gcc_phat(pi1_channel1,pi2_channel1,rate1)	
-		tdoa2_1=gcc_phat(pi1_channel1,pi2_channel2,rate1)
+		tdoa0_1=gcc_phat(pi1_channel1[:200000],pi1_channel2[:200000],rate1)
+		tdoa1_1=gcc_phat(pi1_channel1[:200000],pi2_channel1[:200000],rate1)	
+		tdoa2_1=gcc_phat(pi1_channel1[:200000],pi2_channel2[:200000],rate1)
 
-		delay0=f"Delay0(sec) \t{tdoa0}\t\t {tdoa0_1}\n"
-		delay1=f"Delay0(sec) \t{tdoa1}\t\t {tdoa1_1}\n"
-		delay2=f"Delay0(sec) \t{tdoa2}\t\t {tdoa2_1}\n"
-		description+=description+delay0+delay1+delay2
+		delay0=f"Delay0(ms) \t{round(tdoa0*pow(10,6),4)}\t\t\t    {round(tdoa0_1*pow(10,6),4)}\n"
+		delay1=f"Delay1(ms) \t{round(tdoa1*pow(10,6),4)}\t\t\t    {round(tdoa1_1*pow(10,6),4)}\n"
+		delay2=f"Delay2(ms) \t{round(tdoa2*pow(10,6),4)}\t\t\t    {round(tdoa2_1*pow(10,6),4)}\n"
+		description+=delay0+delay1+delay2
 		return np.array([[tdoa0,tdoa1,tdoa2],[tdoa0_1,tdoa1_1,tdoa2_1]])
 
 		#if verbose:
@@ -134,7 +137,7 @@ def getTdoA(console=None,verbose=False,filt=True):
 
 def main():
 	print('Calculating time delay estimations.....')
-	tdoas=getTdoA()
+	tdoas=getTdoA(filt=True)
 	print(description)
 if __name__ == '__main__':
 	main()
